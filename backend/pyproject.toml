@@ -12,6 +12,7 @@ dependencies = [
     "imutils>=0.5.4",
     "loguru>=0.7.3",
     "pyserial>=3.5",
+    "sqlmodel>=0.0.47",
 ]
 
 [dependency-groups]
