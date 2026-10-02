@@ -5,7 +5,7 @@ from sqlalchemy import text
 
 from core.config import settings
 from core.db import async_engine
-from server.lifespan import lifespan
+from src.server.lifespan import lifespan
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:

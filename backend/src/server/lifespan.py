@@ -5,6 +5,8 @@ from loguru import logger
 
 from core.db import init_db, async_engine
 
+import src.server.models  # noqa: F401
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
