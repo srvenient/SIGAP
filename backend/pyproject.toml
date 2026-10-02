@@ -5,14 +5,15 @@ description = "Sistema Integral de Gestión y Automatización de Parqueaderos."
 requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard-no-fastapi-cloud-cli]>=0.142.2,<1.0.0",
+    "psycopg[binary,pool]>=3.3.6",
+    "sqlmodel>=0.0.47",
+    "loguru>=0.7.3",
     "opencv-python>=5.0.0.93",
     "ultralytics>=8.4.170",
     "matplotlib>=3.11.2",
     "easyocr>=1.7.2",
     "imutils>=0.5.4",
-    "loguru>=0.7.3",
     "pyserial>=3.5",
-    "sqlmodel>=0.0.47",
 ]
 
 [dependency-groups]
@@ -59,3 +60,10 @@ explicit = true
 name = "pytorch-cu130"
 url = "https://download.pytorch.org/whl/cu130"
 explicit = true
+
+[tool.fastapi]
+entrypoint = "src.server.main:app"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
