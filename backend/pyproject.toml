@@ -1,0 +1,60 @@
+[project]
+name = "app"
+version = "0.1.0"
+description = "Sistema Integral de Gestión y Automatización de Parqueaderos."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard-no-fastapi-cloud-cli]>=0.142.2,<1.0.0",
+    "opencv-python>=5.0.0.93",
+    "ultralytics>=8.4.170",
+    "matplotlib>=3.11.2",
+    "easyocr>=1.7.2",
+    "imutils>=0.5.4",
+    "loguru>=0.7.3",
+    "pyserial>=3.5",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]
+
+[project.optional-dependencies]
+cpu = [
+    "torch>=2.11.0",
+    "torchvision>=0.26.0",
+]
+cu130 = [
+    "torch>=2.11.0",
+    "torchvision>=0.26.0",
+]
+
+[tool.uv]
+conflicts = [
+    [
+        { extra = "cpu" },
+        { extra = "cu130" },
+    ],
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu130", extra = "cu130" },
+]
+torchvision = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu130", extra = "cu130" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
