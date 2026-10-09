@@ -1,8 +1,8 @@
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from server.auth.domain.role.role import Role
-from server.auth.domain.role.role_repository import RoleRepository
+from src.server.auth.domain.role.role import Role
+from src.server.auth.domain.role.role_repository import RoleRepository
 
 
 class PostgresRoleRepository(RoleRepository):

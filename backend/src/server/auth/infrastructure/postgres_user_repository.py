@@ -1,8 +1,8 @@
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from server.auth.domain.user.user import User
-from server.auth.domain.user.user_repository import UserRepository
+from src.server.auth.domain.user.user import User
+from src.server.auth.domain.user.user_repository import UserRepository
 
 
 class PostgresUserRepository(UserRepository):

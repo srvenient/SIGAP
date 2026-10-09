@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from server.auth.domain.user.user import User
+from src.server.auth.domain.user.user import User
 
 
 class UserRepository(ABC):
