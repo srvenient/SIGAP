@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from loguru import logger
 from sqlalchemy import text
+from starlette.responses import JSONResponse
 
 from core.config import settings
 from core.db import async_engine
@@ -24,6 +25,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+if settings.all_cors_origins:
+    app.add_middleware(
+        CORSMiddleware,  # type: ignore
+        allow_origins=settings.all_cors_origins,  # type: ignore
+        allow_credentials=True,  # type: ignore
+        allow_methods=["*"],  # type: ignore
+        allow_headers=["*"],  # type: ignore
+    )
+
 
 @app.get("/health-check", tags=["Health"])
 async def health_check():
@@ -31,6 +41,9 @@ async def health_check():
         async with async_engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         return {"status": "ok", "database": "connected"}
-    except Exception as e:
-        logger.exception("Health check failed: %s", e)
-        return {"status": "error", "database": "disconnected"}
+    except Exception:
+        logger.exception("Health check failed")
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "database": "disconnected"},
+        )
