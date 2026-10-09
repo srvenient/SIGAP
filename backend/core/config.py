@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Literal, Any
+from typing import Literal, Any, Annotated
 
-from pydantic import PostgresDsn, computed_field
+from pydantic import PostgresDsn, computed_field, BeforeValidator, AnyUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -35,6 +35,19 @@ class Settings(BaseSettings):
 
     # API settings
     API_V1_STR: str
+
+    FRONTEND_URL: str
+
+    BACKEND_CORS_ORIGINS: Annotated[
+        list[AnyUrl] | str, BeforeValidator(parse_cors)
+    ] = []
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def all_cors_origins(self) -> list[str]:
+        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
+            self.FRONTEND_URL
+        ]
 
     # Database settings
     POSTGRES_USER: str
