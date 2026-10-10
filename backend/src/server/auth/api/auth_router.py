@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request, Response, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
 from core.config import settings
+from core.rate_limit import limiter
 from server.auth.api.deps import AuthServiceDep
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -46,6 +47,7 @@ def _clear_session_cookies(response: Response) -> None:
 
 
 @auth_router.post("/login")
+@limiter.limit(settings.LOGIN_RATE_LIMIT)
 async def login(
         request: Request,
         response: Response,

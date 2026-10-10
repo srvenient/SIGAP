@@ -59,6 +59,11 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     REFRESH_REUSE_GRACE_SECONDS: int = 10
 
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_STORAGE_URI: str = "memory://"
+    LOGIN_RATE_LIMIT: str = "10/minute"
+    AUTH_RATE_LIMIT: str = "30/minute"
+
     FAILED_LOGIN_ATTEMPTS: int = 5
     LOCKOUT_DURATION_MINUTES: int = 15  # minutes
 

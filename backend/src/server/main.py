@@ -6,6 +6,7 @@ from starlette.responses import JSONResponse
 
 from core.config import settings
 from core.db import async_engine
+from core.rate_limit import limiter
 from src.server.lifespan import lifespan
 from src.server.auth.api.exception_handlers import register_auth_errors
 from src.server.auth.api.auth_router import auth_router
@@ -27,6 +28,8 @@ app = FastAPI(
     generate_unique_id_function=custom_generate_unique_id,
     lifespan=lifespan
 )
+
+app.state.limiter = limiter
 
 if settings.all_cors_origins:
     app.add_middleware(
