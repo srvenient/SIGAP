@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, false
 from sqlmodel import Relationship, SQLModel, Field
 
 from src.server.shared.infrastructure.providers.system_clock import get_localized_now
@@ -40,6 +40,14 @@ class User(UserBase, table=True):
     )
 
     hashed_password: str = Field(nullable=False)
+
+    must_change_password: bool = Field(
+        default=False, nullable=False,
+        sa_column_kwargs={"server_default": false()},
+    )
+    password_changed_at: Optional[datetime] = Field(
+        default=None, sa_type=DateTime(timezone=True)
+    )
 
     # Bloqueo por intentos fallidos
     failed_login_attempts: int = Field(
