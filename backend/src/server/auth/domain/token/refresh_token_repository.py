@@ -1,0 +1,24 @@
+from abc import ABC, abstractmethod
+from uuid import UUID
+
+from src.server.auth.domain.token.refresh_token import RefreshToken
+
+
+class RefreshTokenRepository(ABC):
+    @abstractmethod
+    async def save(self, token: RefreshToken) -> RefreshToken: ...
+
+    @abstractmethod
+    async def find_by_hash(self, token_hash: str) -> RefreshToken | None: ...
+
+    @abstractmethod
+    async def revoke(self, token_id: UUID) -> None: ...
+
+    @abstractmethod
+    async def revoke_family(self, family_id: UUID) -> None: ...
+
+    @abstractmethod
+    async def revoke_all_for_user(self, user_id: UUID) -> None: ...
+
+    @abstractmethod
+    async def delete_expired(self) -> int: ...
