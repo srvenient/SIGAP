@@ -1,0 +1,75 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data_dev:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./backend
+      target: local
+      args:
+        DEVICE_TYPE: ${DEVICE_TYPE:-cpu}
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/src
+          target: /app/src
+
+        - action: rebuild
+          path: ./backend/pyproject.toml
+        - action: rebuild
+          path: ./backend/uv.lock
+
+  frontend:
+    build:
+      context: ./frontend
+      target: local
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/app
+          target: /app/app
+
+        - action: sync
+          path: ./frontend/public
+          target: /app/public
+        - action: sync
+          path: ./frontend/index.html
+          target: /app/index.html
+        - action: sync
+          path: ./frontend/vite.config.ts
+          target: /app/vite.config.ts
+
+        - action: rebuild
+          path: ./frontend/package.json
+        - action: rebuild
+          path: ./frontend/pnpm-lock.yaml
+
+volumes:
+  db_data_dev:
