@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 
 from src.server.auth.domain import exceptions as e
 
@@ -36,7 +37,15 @@ async def _account_locked_handler(_: Request, exc: Exception) -> JSONResponse:
     )
 
 
-def register_auth_errors(app: FastAPI) -> None:
+async def _rate_limit_handler(_: Request, __: Exception) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        content={"detail": "Too many requests. Try again later."},
+    )
+
+
+def register_exception_handlers(app: FastAPI) -> None:
     for exc_class, (code, detail) in _ERRORS.items():
         app.add_exception_handler(exc_class, _make_handler(code, detail))
     app.add_exception_handler(e.AccountLocked, _account_locked_handler)
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
