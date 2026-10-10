@@ -1,8 +1,11 @@
-import datetime
+from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 
+from sqlalchemy import DateTime
 from sqlmodel import Relationship, SQLModel, Field
+
+from src.server.shared.infrastructure.providers.system_clock import get_localized_now
 
 if TYPE_CHECKING:
     from src.server.auth.domain.role.role import Role
@@ -38,16 +41,27 @@ class User(UserBase, table=True):
 
     hashed_password: str = Field(nullable=False)
 
-    last_login: Optional[datetime.datetime] = Field(default=None)
-
-    created_at: datetime.datetime = Field(
-        nullable=False,
-        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc)
+    # Bloqueo por intentos fallidos
+    failed_login_attempts: int = Field(
+        default=0, nullable=False,
+        sa_column_kwargs={"server_default": "0"},
     )
-    updated_at: datetime.datetime = Field(
+    locked_until: Optional[datetime] = Field(
+        default=None, sa_type=DateTime(timezone=True)
+    )
+
+    last_login: Optional[datetime] = Field(
+        default=None, sa_type=DateTime(timezone=True)
+    )
+
+    created_at: datetime = Field(
+        default_factory=get_localized_now, nullable=False, sa_type=DateTime(timezone=True)
+    )
+    updated_at: datetime = Field(
+        default_factory=get_localized_now,
         nullable=False,
-        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc),
-        sa_column_kwargs={"onupdate": datetime.datetime.now(datetime.timezone.utc)}
+        sa_type=DateTime(timezone=True),
+        sa_column_kwargs={"onupdate": get_localized_now},
     )
 
     role: Optional["Role"] = Relationship(back_populates="users")
