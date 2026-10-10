@@ -8,6 +8,8 @@ from core.config import settings
 from core.db import async_engine
 from src.server.lifespan import lifespan
 from src.server.auth.api.exception_handlers import register_auth_errors
+from src.server.auth.api.auth_router import auth_router
+from src.server.auth.api.user_router import user_router
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -49,4 +51,8 @@ async def health_check():
             content={"status": "error", "database": "disconnected"},
         )
 
+
 register_auth_errors(app)
+
+app.include_router(auth_router, prefix=settings.API_V1_STR)
+app.include_router(user_router, prefix=settings.API_V1_STR)
