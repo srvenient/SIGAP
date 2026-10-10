@@ -7,6 +7,7 @@ from starlette.responses import JSONResponse
 from core.config import settings
 from core.db import async_engine
 from src.server.lifespan import lifespan
+from src.server.auth.api.exception_handlers import register_auth_errors
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -47,3 +48,5 @@ async def health_check():
             status_code=503,
             content={"status": "error", "database": "disconnected"},
         )
+
+register_auth_errors(app)
