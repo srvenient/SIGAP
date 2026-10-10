@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import timedelta, datetime
 from uuid import UUID, uuid4
 
 from jwt import InvalidTokenError
@@ -48,14 +48,25 @@ class AuthService:
             changes = {"failed_login_attempts": attempts}
         await self.user_repository.update(user.id, changes)
 
-    async def _issue_session(self, user: User, family_id: UUID | None = None) -> tuple[str, str]:
+    async def _issue_session(
+            self,
+            user: User,
+            family_id: UUID | None = None,
+            absolute_expires_at: datetime | None = None
+    ) -> tuple[str, str]:
         access = security.create_access_token(user.id)
         raw, hashed = security.generate_refresh_token()
+        now = get_localized_now()
+
+        if absolute_expires_at is None:
+            absolute_expires_at = now + timedelta(days=settings.ABSOLUTE_SESSION_EXPIRE_DAYS)
+
         await self.refresh_token_repository.save(RefreshToken(
             user_id=user.id,
             family_id=family_id or uuid4(),
             token_hash=hashed,
-            expires_at=get_localized_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            expires_at=now + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            absolute_expires_at=absolute_expires_at,
         ))
         return access, raw
 
@@ -122,6 +133,10 @@ class AuthService:
         if stored.expires_at <= now:
             raise InvalidToken
 
+        if stored.absolute_expires_at <= now:
+            await self.refresh_token_repository.revoke_family(stored.family_id)
+            raise InvalidToken
+
         if stored.revoked_at is not None:
             grace = timedelta(seconds=settings.REFRESH_REUSE_GRACE_SECONDS)
             if now - stored.revoked_at > grace:
@@ -139,7 +154,11 @@ class AuthService:
         if stored.revoked_at is None:
             await self.refresh_token_repository.revoke(stored.id)
 
-        access, refresh = await self._issue_session(user, family_id=stored.family_id)
+        access, refresh = await self._issue_session(
+            user,
+            family_id=stored.family_id,
+            absolute_expires_at=stored.absolute_expires_at
+        )
         return LoginResult(user, access_token=access, refresh_token=refresh)
 
     async def logout(self, raw_refresh_token: str) -> None:
