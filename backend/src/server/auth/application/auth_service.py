@@ -112,7 +112,6 @@ class AuthService:
         return await self._user_from_token(access_token, security.ACCESS_AUD)
 
     async def refresh(self, raw_refresh_token: str) -> LoginResult:
-        """Rota el refresh token y emite un access token nuevo."""
         stored = await self.refresh_token_repository.find_by_hash(
             security.hash_refresh_token(raw_refresh_token)
         )
@@ -144,7 +143,6 @@ class AuthService:
         return LoginResult(user, access_token=access, refresh_token=refresh)
 
     async def logout(self, raw_refresh_token: str) -> None:
-        """Cierra la sesión de este dispositivo (toda su familia de tokens)."""
         stored = await self.refresh_token_repository.find_by_hash(
             security.hash_refresh_token(raw_refresh_token)
         )
@@ -152,13 +150,11 @@ class AuthService:
             await self.refresh_token_repository.revoke_family(stored.family_id)
 
     async def logout_all(self, user: User) -> None:
-        """Cierra todas las sesiones del usuario."""
         await self.refresh_token_repository.revoke_all_for_user(user.id)
 
     async def change_password(
             self, user: User, current_password: str, new_password: str
     ) -> tuple[str, str]:
-        """Cambia la contraseña, cierra las demás sesiones y devuelve (access, refresh) nuevos."""
         if not security.verify_password(current_password, user.hashed_password):
             raise InvalidPassword
         if security.verify_password(new_password, user.hashed_password):
