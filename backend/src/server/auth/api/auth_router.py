@@ -6,9 +6,9 @@ from starlette.responses import JSONResponse
 
 from core.config import settings
 from core.rate_limit import limiter
-from server.auth.api.deps import AuthServiceDep, SessionUserDep
-from server.auth.domain.exceptions import InvalidToken
-from server.auth.domain.user.user import UserPublic, UpdatePassword
+from src.server.auth.api.deps import AuthServiceDep, SessionUserDep
+from src.server.auth.domain.exceptions import InvalidToken
+from src.server.auth.domain.user.user import UserPublic, UpdatePassword
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
