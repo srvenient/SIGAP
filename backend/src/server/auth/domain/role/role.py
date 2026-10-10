@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
@@ -6,6 +7,10 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from src.server.auth.domain.user.user import User
+
+
+class RoleName(Enum):
+    ADMIN = "admin"
 
 
 class RoleBase(SQLModel):

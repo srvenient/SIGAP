@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -9,7 +11,7 @@ class PostgresUserRepository(UserRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def find_by_id(self, user_id: str) -> User | None:
+    async def find_by_id(self, user_id: UUID) -> User | None:
         user: User | None = await self.session.get(User, user_id)
         return user
 
@@ -24,7 +26,7 @@ class PostgresUserRepository(UserRepository):
         await self.session.refresh(user)
         return user
 
-    async def update(self, user_id: str, user_data) -> User | None:
+    async def update(self, user_id: UUID, user_data) -> User | None:
         user: User | None = await self.find_by_id(user_id)
         if user is None:
             return None
@@ -34,13 +36,13 @@ class PostgresUserRepository(UserRepository):
         await self.session.refresh(user)
         return user
 
-    async def delete(self, user_id: str):
+    async def delete(self, user_id: UUID):
         user: User | None = await self.find_by_id(user_id)
         if user:
             await self.session.delete(user)
             await self.session.commit()
 
-    async def delete_and_retrieve(self, user_id: str) -> User | None:
+    async def delete_and_retrieve(self, user_id: UUID) -> User | None:
         user: User | None = await self.find_by_id(user_id)
         if user is None:
             return None

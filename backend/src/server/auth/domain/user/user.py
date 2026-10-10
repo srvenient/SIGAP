@@ -1,12 +1,11 @@
 import datetime
-import uuid
 from typing import Optional, TYPE_CHECKING
+from uuid import UUID, uuid4
 
-from sqlalchemy import UniqueConstraint
 from sqlmodel import Relationship, SQLModel, Field
 
 if TYPE_CHECKING:
-    from server.auth.domain.role.role import Role
+    from src.server.auth.domain.role.role import Role
 
 
 class UserBase(SQLModel):
@@ -16,6 +15,8 @@ class UserBase(SQLModel):
 
 
 class UserCreate(UserBase):
+    role_id: UUID = Field(default=None, nullable=False)
+
     password: str = Field(min_length=8, max_length=40)
 
 
@@ -26,17 +27,13 @@ class UpdatePassword(SQLModel):
 
 class User(UserBase, table=True):
     __tablename__ = "users"
-    __table_args__ = (
-        UniqueConstraint("username", name="uq_users_username")
-    )
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    role_id: Optional[uuid.UUID] = Field(
+    role_id: Optional[UUID] = Field(
         default=None,
         foreign_key="roles.id",
         nullable=True
-
     )
 
     hashed_password: str = Field(nullable=False)
@@ -57,7 +54,7 @@ class User(UserBase, table=True):
 
 
 class UserPublic(UserBase):
-    id: uuid.UUID
+    id: UUID
 
 
 class UsersPublic(SQLModel):

@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
+from uuid import UUID
 
 from src.server.auth.domain.user.user import User
 
 
 class UserRepository(ABC):
     @abstractmethod
-    async def find_by_id(self, user_id: str) -> User | None:
+    async def find_by_id(self, user_id: UUID) -> User | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -17,13 +18,13 @@ class UserRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def update(self, user_id: str, user_data) -> User | None:
+    async def update(self, user_id: UUID, user_data) -> User | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, user_id: str):
+    async def delete(self, user_id: UUID):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_and_retrieve(self, user_id: str) -> User | None:
+    async def delete_and_retrieve(self, user_id: UUID) -> User | None:
         raise NotImplementedError

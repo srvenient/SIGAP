@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -9,7 +11,7 @@ class PostgresRoleRepository(RoleRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def find_by_id(self, role_id: str) -> Role | None:
+    async def find_by_id(self, role_id: UUID) -> Role | None:
         role: Role | None = await self.session.get(Role, role_id)
         return role
 
@@ -31,7 +33,7 @@ class PostgresRoleRepository(RoleRepository):
         await self.session.refresh(role)
         return role
 
-    async def update(self, role_id: str, role_data) -> Role | None:
+    async def update(self, role_id: UUID, role_data) -> Role | None:
         role = await self.find_by_id(role_id)
         if not role:
             return None
@@ -42,13 +44,13 @@ class PostgresRoleRepository(RoleRepository):
         await self.session.refresh(role)
         return role
 
-    async def delete(self, role_id: str):
+    async def delete(self, role_id: UUID):
         role: Role | None = await self.find_by_id(role_id)
         if role:
             await self.session.delete(role)
             await self.session.commit()
 
-    async def delete_and_retrieve(self, role_id: str) -> Role | None:
+    async def delete_and_retrieve(self, role_id: UUID) -> Role | None:
         role = await self.find_by_id(role_id)
         if role is None:
             return None

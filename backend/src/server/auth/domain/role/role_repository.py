@@ -1,11 +1,12 @@
 from abc import abstractmethod, ABC
+from uuid import UUID
 
 from src.server.auth.domain.role.role import Role
 
 
 class RoleRepository(ABC):
     @abstractmethod
-    async def find_by_id(self, role_id: str) -> Role | None:
+    async def find_by_id(self, role_id: UUID) -> Role | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -21,13 +22,13 @@ class RoleRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def update(self, role_id: str, role_data) -> Role | None:
+    async def update(self, role_id: UUID, role_data) -> Role | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, role_id: str):
+    async def delete(self, role_id: UUID):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_and_retrieve(self, role_id: str) -> Role | None:
+    async def delete_and_retrieve(self, role_id: UUID) -> Role | None:
         raise NotImplementedError
