@@ -8,6 +8,8 @@ dependencies = [
     "psycopg[binary,pool]>=3.3.6",
     "sqlmodel>=0.0.47",
     "loguru>=0.7.3",
+    "pyjwt>=2.15.1",
+    "pwdlib[argon2]>=0.3.1",
 ]
 
 [dependency-groups]
