@@ -13,7 +13,6 @@ class UserBase(SQLModel):
     username: str = Field(min_length=3, max_length=20, nullable=False)
 
     is_active: bool = Field(default=True, nullable=False)
-    is_superuser: bool = Field(default=False, nullable=False)
 
 
 class UserCreate(UserBase):
@@ -42,9 +41,6 @@ class User(UserBase, table=True):
 
     hashed_password: str = Field(nullable=False)
 
-    is_2fa_enabled: bool = Field(default=False, nullable=False)
-    otp_secret: Optional[str] = Field(default=None, nullable=True)
-
     last_login: Optional[datetime.datetime] = Field(default=None)
 
     created_at: datetime.datetime = Field(
@@ -62,8 +58,6 @@ class User(UserBase, table=True):
 
 class UserPublic(UserBase):
     id: uuid.UUID
-
-    is_2fa_enabled: bool
 
 
 class UsersPublic(SQLModel):
