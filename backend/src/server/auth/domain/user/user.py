@@ -23,6 +23,11 @@ class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=40)
 
 
+class UserUpdate(SQLModel):
+    role_id: UUID | None = None
+    is_active: bool | None = None
+
+
 class UpdatePassword(SQLModel):
     current_password: str = Field(min_length=8, max_length=40)
     new_password: str = Field(min_length=8, max_length=40)
