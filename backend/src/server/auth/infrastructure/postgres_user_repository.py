@@ -20,6 +20,16 @@ class PostgresUserRepository(UserRepository):
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
 
+    async def find_all(self, skip: int = 0, limit: int = 50) -> list[User]:
+        result = await self.session.execute(
+            select(User).order_by(User.created_at).offset(skip).limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def count(self) -> int:
+        result = await self.session.execute(select(func.count()).select_from(User))
+        return result.scalar_one()
+
     async def save(self, user: User) -> User:
         self.session.add(user)
         await self.session.commit()
