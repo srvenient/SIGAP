@@ -1,11 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Request, Response, Depends
+from fastapi import APIRouter, Request, Response, Depends, Cookie, status
 from fastapi.security import OAuth2PasswordRequestForm
+from starlette.responses import JSONResponse
 
 from core.config import settings
 from core.rate_limit import limiter
-from server.auth.api.deps import AuthServiceDep
+from server.auth.api.deps import AuthServiceDep, SessionUserDep
+from server.auth.domain.exceptions import InvalidToken
+from server.auth.domain.user.user import UserPublic, UpdatePassword
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -46,6 +49,12 @@ def _clear_session_cookies(response: Response) -> None:
     response.delete_cookie(REFRESH_COOKIE, path=REFRESH_COOKIE_PATH, **_base_cookie_kwargs())
 
 
+def _unauthorized_and_clear(detail: str) -> JSONResponse:
+    resp = JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": detail})
+    _clear_session_cookies(resp)
+    return resp
+
+
 @auth_router.post("/login")
 @limiter.limit(settings.LOGIN_RATE_LIMIT)
 async def login(
@@ -60,3 +69,61 @@ async def login(
         "detail": "Login successful",
         "must_change_password": result.user.must_change_password,
     }
+
+
+@auth_router.post("/refresh")
+@limiter.limit(settings.AUTH_RATE_LIMIT)
+async def refresh(
+        request: Request,
+        response: Response,
+        auth_service: AuthServiceDep,
+        refresh_token: Annotated[str | None, Cookie()] = None,
+):
+    if not refresh_token:
+        return _unauthorized_and_clear("Not authenticated")
+
+    try:
+        result = await auth_service.refresh(refresh_token)
+    except InvalidToken:
+        return _unauthorized_and_clear("Could not validate credentials")
+
+    _set_session_cookies(response, result.access_token, result.refresh_token)
+    return {"detail": "Session refreshed", "must_change_password": result.user.must_change_password}
+
+
+@auth_router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+        response: Response,
+        auth_service: AuthServiceDep,
+        refresh_token: Annotated[str | None, Cookie()] = None,
+):
+    if refresh_token:
+        await auth_service.logout(refresh_token)
+    _clear_session_cookies(response)
+
+
+@auth_router.post("/logout-all", status_code=status.HTTP_204_NO_CONTENT)
+async def logout_all(response: Response, user: SessionUserDep, auth_service: AuthServiceDep):
+    await auth_service.logout_all(user)
+    _clear_session_cookies(response)
+
+
+@auth_router.get("/me", response_model=UserPublic)
+async def me(user: SessionUserDep):
+    return user
+
+
+@auth_router.post("/change-password")
+@limiter.limit(settings.AUTH_RATE_LIMIT)
+async def change_password(
+        request: Request,
+        response: Response,
+        body: UpdatePassword,
+        user: SessionUserDep,  # permitido aunque must_change_password sea True
+        auth_service: AuthServiceDep,
+):
+    access, refresh_token = await auth_service.change_password(
+        user, body.current_password, body.new_password
+    )
+    _set_session_cookies(response, access, refresh_token)
+    return {"detail": "Password updated"}

@@ -1,10 +1,11 @@
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Cookie, HTTPException, status
 
 from src.server.auth.application.auth_service import AuthService
 from src.server.auth.application.user_service import UserService
 from src.server.auth.domain.role.role_repository import RoleRepository
+from src.server.auth.domain.user.user import User
 from src.server.auth.domain.user.user_repository import UserRepository
 from src.server.auth.domain.token.refresh_token_repository import RefreshTokenRepository
 from src.server.auth.infrastructure.postgres_refresh_token_repository import PostgresRefreshTokenRepository
@@ -51,3 +52,35 @@ def get_auth_service(
 
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+
+
+async def get_session_user(
+        auth_service: AuthServiceDep,
+        access_token: Annotated[str | None, Cookie()] = None,
+) -> User:
+    """Sesión válida. Solo para /me y /change-password."""
+    if not access_token:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
+    return await auth_service.get_user_from_token(access_token)  # InvalidToken -> 401 (handler)
+
+
+SessionUserDep = Annotated[User, Depends(get_session_user)]
+
+
+async def get_current_user(user: SessionUserDep) -> User:
+    """Sesión válida y contraseña ya cambiada. Úsalo en todo lo demás."""
+    if user.must_change_password:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "password_change_required")
+    return user
+
+
+CurrentUserDep = Annotated[User, Depends(get_current_user)]
+
+
+def require_roles(*allowed: RoleName):
+    async def checker(user: CurrentUserDep) -> User:
+        if user.role and user.role.name in allowed:
+            return user
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Insufficient permissions")
+
+    return checker
