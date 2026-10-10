@@ -34,7 +34,12 @@ class Settings(BaseSettings):
     PROJECT_VERSION: str
 
     # API settings
-    API_V1_STR: str
+    API_V1_STR: str = "/api/v1"
+
+    SECRET_KEY: str
+
+    FIRST_SUPERUSER: str
+    FIRST_SUPERUSER_PASSWORD: str
 
     FRONTEND_URL: str
 
