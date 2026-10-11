@@ -6,6 +6,7 @@ from core.config import settings
 from src.server.auth.application.user_service import UserService
 from src.server.auth.infrastructure.postgres_user_repository import PostgresUserRepository
 from src.server.auth.infrastructure.postgres_role_repository import PostgresRoleRepository
+from src.server.auth.infrastructure.postgres_refresh_token_repository import PostgresRefreshTokenRepository
 
 async_engine = create_async_engine(str(settings.SQLALCHEMY_DATABASE_URI), echo=settings.DEBUG, future=True)
 
@@ -39,7 +40,8 @@ async def init_db() -> None:
         if not user:
             user_service = UserService(
                 user_repository=PostgresUserRepository(session=session),
-                role_repository=PostgresRoleRepository(session=session)
+                role_repository=PostgresRoleRepository(session=session),
+                refresh_token_repository=PostgresRefreshTokenRepository(session=session)
             )
             user_in = UserCreate(
                 username=settings.FIRST_SUPERUSER,

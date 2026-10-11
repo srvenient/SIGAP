@@ -25,7 +25,7 @@ class UserService:
         if await self.user_repository.find_by_username(user_create.username):
             raise UsernameAlreadyExists
 
-        if await self.role_repository.find_by_id(user_create.role_id):
+        if not await self.role_repository.find_by_id(user_create.role_id):
             raise RoleNotFound
 
         user = User(
