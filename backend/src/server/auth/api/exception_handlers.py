@@ -5,19 +5,15 @@ from slowapi.errors import RateLimitExceeded
 from src.server.auth.domain import exceptions as e
 
 _ERRORS: dict[type[Exception], tuple[int, str]] = {
-    e.InvalidCredentials: (status.HTTP_401_UNAUTHORIZED, "Incorrect username or password"),
-    e.InactiveUser: (status.HTTP_403_FORBIDDEN, "Inactive user"),
-    e.InvalidToken: (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials"),
-    e.InvalidTwoFactorCode: (status.HTTP_401_UNAUTHORIZED, "Invalid 2FA code"),
-    e.InvalidPassword: (status.HTTP_400_BAD_REQUEST, "Current password is incorrect"),
-    e.SamePassword: (status.HTTP_400_BAD_REQUEST, "New password must be different from the current one"),
-    e.TwoFactorAlreadyEnabled: (status.HTTP_400_BAD_REQUEST, "2FA is already enabled"),
-    e.TwoFactorNotEnabled: (status.HTTP_400_BAD_REQUEST, "2FA is not enabled"),
-    e.TwoFactorNotInitialized: (status.HTTP_400_BAD_REQUEST, "2FA setup not initialized"),
-    e.UsernameAlreadyExists: (status.HTTP_409_CONFLICT, "Username already exists"),
-    e.UserNotFound: (status.HTTP_404_NOT_FOUND, "User not found"),
-    e.RoleNotFound: (status.HTTP_400_BAD_REQUEST, "Role not found"),
-    e.CannotModifySelf: (status.HTTP_400_BAD_REQUEST, "You cannot do this on your own account"),
+    e.InvalidCredentials: (status.HTTP_401_UNAUTHORIZED, "Nombre de usuario o contraseña incorrectos"),
+    e.InactiveUser: (status.HTTP_403_FORBIDDEN, "Usuario inactivo"),
+    e.InvalidToken: (status.HTTP_401_UNAUTHORIZED, "No se pudieron validar las credenciales"),
+    e.InvalidPassword: (status.HTTP_400_BAD_REQUEST, "La contraseña actual es incorrecta"),
+    e.SamePassword: (status.HTTP_400_BAD_REQUEST, "La nueva contraseña debe ser diferente a la actual"),
+    e.UsernameAlreadyExists: (status.HTTP_409_CONFLICT, "El nombre de usuario ya existe"),
+    e.UserNotFound: (status.HTTP_404_NOT_FOUND, "Usuario no encontrado"),
+    e.RoleNotFound: (status.HTTP_400_BAD_REQUEST, "Rol no encontrado"),
+    e.CannotModifySelf: (status.HTTP_400_BAD_REQUEST, "No puedes realizar esta acción en tu propia cuenta"),
 }
 
 

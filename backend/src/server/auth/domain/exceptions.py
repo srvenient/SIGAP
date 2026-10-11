@@ -10,22 +10,10 @@ class InactiveUser(AuthError): ...
 class InvalidToken(AuthError): ...
 
 
-class InvalidTwoFactorCode(AuthError): ...
-
-
 class InvalidPassword(AuthError): ...  # contraseña actual incorrecta
 
 
 class SamePassword(AuthError): ...  # la nueva es igual a la actual
-
-
-class TwoFactorAlreadyEnabled(AuthError): ...
-
-
-class TwoFactorNotEnabled(AuthError): ...
-
-
-class TwoFactorNotInitialized(AuthError): ...
 
 
 class AccountLocked(AuthError):
