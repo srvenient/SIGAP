@@ -44,7 +44,7 @@ async def _rate_limit_handler(_: Request, __: Exception) -> JSONResponse:
     )
 
 
-def register_exception_handlers(app: FastAPI) -> None:
+def register_auth_errors(app: FastAPI) -> None:
     for exc_class, (code, detail) in _ERRORS.items():
         app.add_exception_handler(exc_class, _make_handler(code, detail))
     app.add_exception_handler(e.AccountLocked, _account_locked_handler)
