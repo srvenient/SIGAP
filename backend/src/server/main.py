@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from loguru import logger
 from sqlalchemy import text
+from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
 from core.config import settings
