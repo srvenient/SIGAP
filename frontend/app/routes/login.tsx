@@ -143,9 +143,9 @@ export default function LoginPage() {
         <div className="card w-full max-w-110 py-8 space-y-6">
           {/* Encabezado */}
           <div className="text-center space-y-2">
-            <div className="flex flex-col items-center justify-center">
-              <img src={logo} className="h-14 w-auto mx-auto mb-2" alt="Logo" />
-              <h1 className="text-3xl font-bold font-special">
+            <div className="flex flex-col items-center justify-center -mt-2">
+              <img src={logo} className="h-24 w-auto mx-auto mb-2" alt="Logo" />
+              <h1 className="text-3xl font-bold font-special -mt-4">
                 ¡Bienvenido!
               </h1>
             </div>

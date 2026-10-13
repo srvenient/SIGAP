@@ -110,7 +110,6 @@ export function Sidebar({
   const isAdmin = normalizedRole === "admin";
   const isOperator = normalizedRole === "operator";
 
-  // Módulos corporativos según rol
   const getNavSections = (): NavSection[] => {
     if (isAdmin) {
       return [
@@ -170,7 +169,6 @@ export function Sidebar({
 
   return (
     <>
-      {/* Backdrop móvil */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 lg:hidden"
@@ -188,12 +186,8 @@ export function Sidebar({
         `}
       >
         <div className="flex flex-col h-full overflow-hidden select-none font-sans">
-          {/* ========================================================= */}
-          {/* MODO COLAPSADO (Rail Industrial - Iconos y Acciones Clave) */}
-          {/* ========================================================= */}
           {isCollapsed ? (
             <div className="flex flex-col h-full items-center py-2 justify-between">
-              {/* Cabecera Rail */}
               <div className="flex flex-col items-center gap-2.5 w-full border-b border-border-secondary">
                 <button
                   type="button"
@@ -222,9 +216,7 @@ export function Sidebar({
                 <Search className="w-4 h-4" />
               </button>
 
-              {/* Lista de Iconos de Navegación Rail */}
               <div className="flex-1 w-full overflow-y-auto py-2 space-y-1.5 flex flex-col items-center scrollbar-none">
-                {/* Panel de Control Principal */}
                 <NavLink
                   to="/dashboard"
                   end
@@ -241,7 +233,6 @@ export function Sidebar({
 
                 <div className="w-6 h-px bg-border-secondary my-1" />
 
-                {/* Iconos por Secciones */}
                 {navSections.map((section, sIdx) => (
                   <React.Fragment key={section.category || sIdx}>
                     {section.items.map((item) => {
@@ -270,8 +261,6 @@ export function Sidebar({
                 ))}
               </div>
 
-              {/* Utilidades y Usuario en Rail */}
-
               <div className="flex flex-col items-center gap-2 w-full pt-2" ref={userMenuRef}>
                 <div className="w-10 h-px bg-border-secondary my-1" />
 
@@ -287,16 +276,15 @@ export function Sidebar({
                   </button>
                 </div>
 
-                {/* Popover de Usuario en modo Rail */}
                 {isUserMenuOpen && (
-                  <div className="absolute left-18 bottom-3 w-64 z-50 bg-bg-surface-elevated border border-border-primary rounded-xl shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute left-16 bottom-2 w-64 z-50 bg-bg-surface-elevated border border-border-primary rounded-xl shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150">
                     <div className="flex items-center gap-2.5 p-2 border-b border-border-secondary">
-                      <div className="w-8 h-8 rounded-lg bg-bg-app border border-border-primary flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-bg-app border border-border-primary flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0">
                         <img src={avatar1} alt="avatar" className="w-full h-full rounded-full" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-semibold text-text-primary truncate leading-tight">
-                          {user?.username || "Administrador"}
+                          {user?.fullName || "Administrador"}
                         </p>
                         <p className="text-[10px] text-text-muted truncate mt-0.5 font-mono">
                           {getRoleDisplayName(role)}
@@ -311,22 +299,10 @@ export function Sidebar({
                           setIsUserMenuOpen(false);
                           onOpenProfile?.();
                         }}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-app transition-colors cursor-pointer"
+                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-app transition-colors cursor-pointer mb-2"
                       >
                         <Settings className="w-3.5 h-3.5 text-text-muted" />
                         <span>Configuración de cuenta</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsUserMenuOpen(false);
-                          navigate("/dashboard/devices");
-                        }}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-app transition-colors cursor-pointer"
-                      >
-                        <Cpu className="w-3.5 h-3.5 text-text-muted" />
-                        <span>Consola de Dispositivos</span>
                       </button>
 
                       <div className="pt-1 border-t border-border-secondary">
@@ -348,30 +324,24 @@ export function Sidebar({
               </div>
             </div>
           ) : (
-            /* ========================================================= */
-            /* MODO EXPANDIDO (Diseño Empresarial Serio para SIGAP)      */
-            /* ========================================================= */
             <div className="flex flex-col h-full overflow-hidden">
-              {/* 1. Cabecera Corporativa: Identificador SIGAP + Sede + Colapsar */}
-              <div className="px-1.5 py-3 pb-2 relative shrink-0 border-b border-border-secondary" ref={dropdownRef}>
+              <div className="px-1.5 py-0.5 pb-1 relative shrink-0 border-b border-border-secondary" ref={dropdownRef}>
                 <div className="flex items-center justify-between gap-2 p-2">
-                  {/* Identidad Corporativa & Selector de Sede */}
-                  <div className="flex items-center gap-1 min-w-0 flex-1">
-                    <img src={logo} alt="Logo" className="h-auto w-10 object-cover" />
+                  <div className="flex items-center justify-center gap-1.5 min-w-0 flex-1">
+                    <img src={logo} alt="Logo" className="h-auto w-16 object-cover -ml-2" />
 
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 -ml-2.5">
                       <div className="flex flex-col items-start leading-none">
-                        <span className="font-special font-bold italic text-lg tracking-wide uppercase">
+                        <span className="font-special font-bold italic text-xl tracking-wide uppercase">
                           SIGAP
                         </span>
-                        <span className="text-[10.5px] text-text-muted">
+                        <span className="text-[11px] text-text-muted">
                           Parqueo Inteligente
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Botón Colapsar Barra Lateral */}
                   <button
                     type="button"
                     onClick={onToggleCollapse}
@@ -383,7 +353,6 @@ export function Sidebar({
                 </div>
               </div>
 
-              {/* 2. Barra de Búsqueda Corporativa */}
               <div className="px-3 pt-4 pb-2">
                 <div className="flex items-center w-full h-8 px-2.5 rounded-lg bg-bg-app border border-border-secondary text-xs text-text-muted transition-colors focus-within:border-border-strong hover:border-border-primary">
                   <Search className="w-3.5 h-3.5 text-text-muted mr-2 shrink-0" />
@@ -401,9 +370,7 @@ export function Sidebar({
                 </div>
               </div>
 
-              {/* 3. Navegación Principal y Módulos de Operación */}
               <div className="flex-1 overflow-y-auto px-3 py-1 space-y-2.5 scrollbar-thin">
-                {/* Dashboard Principal */}
                 <div className="space-y-0.5 pt-1">
                   <NavLink
                     to="/dashboard"
@@ -430,7 +397,6 @@ export function Sidebar({
                   </NavLink>
                 </div>
 
-                {/* Categorías Acordeón */}
                 {navSections.map((section, sIdx) => {
                   const isCollapsedSection = !!collapsedCategories[section.category];
                   const filteredItems = section.items.filter((item) =>
@@ -441,7 +407,6 @@ export function Sidebar({
 
                   return (
                     <div key={section.category || sIdx} className="space-y-0.5">
-                      {/* Cabecera de Categoría */}
                       <button
                         type="button"
                         onClick={() => toggleCategory(section.category)}
@@ -456,7 +421,6 @@ export function Sidebar({
                         />
                       </button>
 
-                      {/* Lista de Enlaces */}
                       {!isCollapsedSection && (
                         <nav className="space-y-0.5 animate-in fade-in duration-100">
                           {filteredItems.map((item) => {
@@ -502,25 +466,24 @@ export function Sidebar({
                 })}
               </div>
 
-              {/* 4. Tarjeta Inferior de Usuario (Sobria, sin fotos, con iniciales y rol) */}
               <div className="p-3 mt-auto border-t border-border-secondary relative" ref={userMenuRef}>
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="w-full flex items-center justify-between gap-2.5 px-2.5 py-1.5 rounded-lg bg-bg-accent/40 border border-border-strong/60 transition-colors cursor-pointer text-left group shadow-xs"
+                  className="w-full flex items-center justify-between gap-2.5 px-2.5 py-0.5 rounded-lg transition-colors cursor-pointer text-left group shadow-xs"
                   title="Opciones de cuenta"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="relative w-7 h-7 rounded-lg flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0 shadow-xs">
+                    <div className="relative w-8 h-9 rounded-lg flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0 shadow-xs">
                       <img src={avatar1} alt="avatar" className="w-full h-full rounded-md" />
                       <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-status-success ring-2 ring-bg-surface" />
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold text-text-primary truncate leading-tight font-sans">
-                        {user?.username || "Administrador"}
+                        {user?.fullName || "Administrador"}
                       </p>
-                      <p className="text-[11px] text-text-muted truncate mt-0.5">
+                      <p className="text-[11px] text-text-muted truncate ">
                         {getRoleDisplayName(role)}
                       </p>
                     </div>
@@ -529,19 +492,16 @@ export function Sidebar({
                   <ChevronsUpDown className="w-3.5 h-3.5 text-text-muted group-hover:text-text-primary transition-colors shrink-0" />
                 </button>
 
-                {/* 5. Popover del Menú de Usuario */}
                 {isUserMenuOpen && (
                   <div className="absolute left-2.5 right-2.5 bottom-full mb-1.5 z-50 bg-bg-surface-elevated border border-border-primary rounded-xl shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-100">
-                    {/* Header del Perfil en Popover: Configuración a la izquierda del perfil */}
                     <div className="flex items-center gap-2 p-2 border-b border-border-secondary">
-                      {/* Información del Perfil (Avatar + Nombre + Rol) */}
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0">
                           <img src={avatar1} alt="avatar" className="w-full h-full rounded-full" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold text-text-primary truncate leading-tight">
-                            {user?.username || "Administrador"}
+                            {user?.fullName || "Administrador"}
                           </p>
                           <p className="text-[10px] text-text-muted truncate mt-0.5 font-mono">
                             {getRoleDisplayName(role)}
@@ -550,7 +510,6 @@ export function Sidebar({
                       </div>
                     </div>
 
-                    {/* Opciones del Menú */}
                     <div className=" space-y-0.5">
                       <button
                         type="button"

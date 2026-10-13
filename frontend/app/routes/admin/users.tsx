@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useRevalidator } from "react-router";
+import { Link, useRevalidator } from "react-router";
 import type { Route } from "./+types/users";
 import {
   Users,
@@ -26,12 +26,15 @@ import {
   Car,
   Headset,
   ArrowRight,
+  SlidersHorizontal,
+  ArrowUpDown,
+  LayoutDashboard,
   type LucideIcon,
 } from "lucide-react";
 import { userService } from "../../services/userService";
 import { ApiError } from "../../services/api";
 import type { Role, User, UserRole } from "../../types/auth";
-import { Card, CardHeader } from "../../components/ui/Card";
+import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
@@ -72,6 +75,42 @@ const roleRank = (name: string | null | undefined) =>
 type SortKey = "fullName" | "username" | "email" | "role" | "lastLogin" | "createdAt";
 type SortDir = "asc" | "desc";
 
+type SortOptionValue =
+  | "role-asc"
+  | "role-desc"
+  | "fullName-asc"
+  | "fullName-desc"
+  | "username-asc"
+  | "username-desc"
+  | "email-asc"
+  | "email-desc"
+  | "lastLogin-desc"
+  | "lastLogin-asc"
+  | "createdAt-desc"
+  | "createdAt-asc";
+
+const SORT_OPTIONS: { value: SortOptionValue; label: string }[] = [
+  { value: "role-asc", label: "Rol (Jerarquía)" },
+  { value: "role-desc", label: "Rol (Inverso)" },
+  { value: "fullName-asc", label: "Nombre (A - Z)" },
+  { value: "fullName-desc", label: "Nombre (Z - A)" },
+  { value: "username-asc", label: "Usuario (A - Z)" },
+  { value: "username-desc", label: "Usuario (Z - A)" },
+  { value: "email-asc", label: "Correo (A - Z)" },
+  { value: "email-desc", label: "Correo (Z - A)" },
+  { value: "lastLogin-desc", label: "Último acceso (Reciente)" },
+  { value: "lastLogin-asc", label: "Último acceso (Antiguo)" },
+  { value: "createdAt-desc", label: "Alta (Más reciente)" },
+  { value: "createdAt-asc", label: "Alta (Más antiguo)" },
+];
+
+const ROLE_FILTER_OPTIONS: { value: "todos" | UserRole; label: string }[] = [
+  { value: "todos", label: "Todos los roles" },
+  { value: "admin", label: "Administradores" },
+  { value: "operator", label: "Operadores de patio" },
+  { value: "support", label: "Soporte técnico" },
+];
+
 const PAGE_SIZES = [5, 10, 20, 50];
 
 const inputCls =
@@ -87,11 +126,11 @@ const timestamp = (iso: string | null) => (iso ? new Date(iso).getTime() : 0);
 const formatDate = (iso: string | null, withTime = false) =>
   iso
     ? new Date(iso).toLocaleString("es-CO", {
-        day: "2-digit",
-        month: "short",
-        year: withTime ? undefined : "numeric",
-        ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
-      })
+      day: "2-digit",
+      month: "short",
+      year: withTime ? undefined : "numeric",
+      ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+    })
     : "Sin accesos";
 
 /** Genera una contraseña aleatoria criptográficamente segura (letras, números y símbolos). */
@@ -246,6 +285,16 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
       setSortKey(key);
       setSortDir("asc");
     }
+  };
+
+  const currentSortValue: SortOptionValue = `${sortKey}-${sortDir}`;
+
+  const handleSortChange = (val: SortOptionValue) => {
+    const lastHyphen = val.lastIndexOf("-");
+    const key = val.substring(0, lastHyphen) as SortKey;
+    const dir = val.substring(lastHyphen + 1) as SortDir;
+    setSortKey(key);
+    setSortDir(dir);
   };
 
   const openCreate = () => {
@@ -448,56 +497,89 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
   const rangeTo = Math.min(startIndex + pageSize, processedUsers.length);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
-      <div className="flex items-center justify-end">
-        <button
-          type="button"
-          onClick={openCreate}
-          disabled={roles.length === 0}
-          className="btn-primary"
-        >
-          <UserPlus className="w-4 h-4" />
-          Nueva cuenta
-        </button>
+    <div className="space-y-5 animate-in fade-in duration-200">
+      {/* 1. Encabezado superior: Título a la izquierda, Breadcrumb a la derecha */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold font-special text-text-primary tracking-tight">
+            Directorio de cuentas
+          </h1>
+          <p className="text-xs text-text-muted mt-0.5">
+            {users.length} cuentas registradas en el sistema
+          </p>
+        </div>
+
+        <nav aria-label="Ruta de navegación" className="flex items-center gap-1.5 text-xs text-text-muted">
+          <LayoutDashboard className="w-3.5 h-3.5 text-text-muted shrink-0" />
+          <Link to="/dashboard" className="hover:text-text-primary transition-colors">
+            Dashboard
+          </Link>
+          <span className="text-text-disabled">-</span>
+          <span className="text-text-primary font-medium">Directorio de cuentas</span>
+        </nav>
       </div>
 
-      <Card>
-        <CardHeader
-          title={
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-text-primary" />
-              <span>Directorio de cuentas</span>
-            </div>
-          }
-          subtitle={`${users.length} cuentas registradas`}
-          action={
-            <div className="flex flex-col sm:flex-row items-center gap-2">
-              <div className="relative w-full sm:w-60">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre, usuario o correo..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-bg-app border border-border-primary text-xs text-text-primary placeholder:text-text-disabled outline-none transition-all hover:border-border-strong focus:border-primary-DEFAULT focus:ring-3 focus:ring-primary-muted font-mono"
-                />
-              </div>
-              <CustomSelect<"todos" | UserRole>
-                ariaLabel="Filtrar por rol"
-                value={roleFilter}
-                onChange={setRoleFilter}
-                className="w-full sm:w-52"
-                options={[
-                  { value: "todos", label: "Todos los roles" },
-                  { value: "admin", label: "Administradores" },
-                  { value: "operator", label: "Operadores de patio" },
-                  { value: "support", label: "Soporte técnico" },
-                ]}
-              />
-            </div>
-          }
-        />
+      {/* 2. Barra de Controles: Búsqueda y Filtros (izq), Ordenamiento y Acción Crear (der) */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        {/* Izquierda: Buscador y Filtro por Rol */}
+        <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full lg:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar cuentas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 rounded-lg bg-bg-app border border-border-primary text-xs text-text-primary placeholder:text-text-disabled outline-none transition-all hover:border-border-strong focus:border-primary-DEFAULT focus:ring-3 focus:ring-primary-muted font-sans"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary p-0.5 rounded transition-colors cursor-pointer"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
 
+          <CustomSelect<"todos" | UserRole>
+            ariaLabel="Filtrar por rol"
+            value={roleFilter}
+            onChange={setRoleFilter}
+            className="w-full sm:w-48"
+            leftIcon={<SlidersHorizontal className="w-3.5 h-3.5 text-text-muted shrink-0" />}
+            options={ROLE_FILTER_OPTIONS}
+          />
+        </div>
+
+        {/* Derecha: Ordenamiento y Botón Nueva Cuenta */}
+        <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full lg:w-auto justify-end">
+          <CustomSelect<SortOptionValue>
+            ariaLabel="Ordenar por"
+            value={currentSortValue}
+            onChange={handleSortChange}
+            className="w-full sm:w-56"
+            align="right"
+            labelPrefix="Ordenar por: "
+            leftIcon={<ArrowUpDown className="w-3.5 h-3.5 text-text-muted shrink-0" />}
+            options={SORT_OPTIONS}
+          />
+
+          <button
+            type="button"
+            onClick={openCreate}
+            disabled={roles.length === 0}
+            className="btn-primary w-full sm:w-auto shrink-0"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Nueva cuenta</span>
+          </button>
+        </div>
+      </div>
+
+      <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-bg-app/50 border-b border-border-secondary">
@@ -978,8 +1060,6 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
   );
 }
 
-/* ----------------------------- Componentes locales ----------------------------- */
-
 function SortTh({
   label,
   k,
@@ -1005,9 +1085,8 @@ function SortTh({
       <button
         type="button"
         onClick={() => onSort(k)}
-        className={`inline-flex items-center gap-1 uppercase tracking-wider cursor-pointer transition-colors hover:text-text-primary ${
-          active ? "text-text-primary" : ""
-        }`}
+        className={`inline-flex items-center gap-1 uppercase tracking-wider cursor-pointer transition-colors hover:text-text-primary ${active ? "text-text-primary" : ""
+          }`}
         title={k === "role" ? "Orden personalizado: Admin → Operador → Soporte" : `Ordenar por ${label.toLowerCase()}`}
       >
         {label}
@@ -1068,11 +1147,10 @@ function PageBtn({
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       {...rest}
-      className={`min-w-7 h-7 px-2 rounded-md text-xs font-medium flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-        active
+      className={`min-w-7 h-7 px-2 rounded-md text-xs font-medium flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${active
           ? "bg-primary-DEFAULT text-white"
           : "text-text-secondary hover:bg-bg-accent/60 hover:text-text-primary"
-      }`}
+        }`}
     >
       {children}
     </button>
@@ -1096,11 +1174,10 @@ function IconSquare({
       title={title}
       aria-label={title}
       onClick={onClick}
-      className={`w-9.5 h-9.5 shrink-0 rounded-lg border flex items-center justify-center transition-colors cursor-pointer ${
-        active
+      className={`w-9.5 h-9.5 shrink-0 rounded-lg border flex items-center justify-center transition-colors cursor-pointer ${active
           ? "border-status-success-border bg-status-success-bg"
           : "border-border-primary bg-bg-app text-text-secondary hover:text-text-primary hover:border-border-strong"
-      }`}
+        }`}
     >
       {children}
     </button>
@@ -1132,18 +1209,16 @@ function RoleSelector({
             role="radio"
             aria-checked={active}
             onClick={() => onChange(r.id)}
-            className={`group flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer outline-none focus-visible:ring-3 focus-visible:ring-primary-muted ${
-              active
+            className={`group flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer outline-none focus-visible:ring-3 focus-visible:ring-primary-muted ${active
                 ? "border-primary-DEFAULT bg-primary-muted"
                 : "border-border-primary bg-bg-app hover:border-border-strong hover:bg-bg-accent/30"
-            }`}
+              }`}
           >
             <span
-              className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${
-                active
+              className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${active
                   ? "border-primary-DEFAULT/40 bg-bg-app text-primary-DEFAULT"
                   : "border-border-primary bg-bg-card text-text-secondary group-hover:text-text-primary"
-              }`}
+                }`}
             >
               <Icon className="w-4 h-4" />
             </span>
@@ -1165,9 +1240,8 @@ function RoleSelector({
               )}
             </span>
             <span
-              className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
-                active ? "border-primary-DEFAULT bg-primary-DEFAULT text-white" : "border-border-strong"
-              }`}
+              className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${active ? "border-primary-DEFAULT bg-primary-DEFAULT text-white" : "border-border-strong"
+                }`}
               aria-hidden
             >
               {active && <Check className="w-3 h-3" />}
@@ -1179,7 +1253,6 @@ function RoleSelector({
   );
 }
 
-/** Select personalizado: botón + listbox flotante con el estilo de la app. */
 function CustomSelect<T extends string | number>({
   value,
   options,
@@ -1188,6 +1261,9 @@ function CustomSelect<T extends string | number>({
   className = "",
   dropUp = false,
   compact = false,
+  leftIcon,
+  labelPrefix,
+  align = "left",
 }: {
   value: T;
   options: { value: T; label: string }[];
@@ -1196,6 +1272,9 @@ function CustomSelect<T extends string | number>({
   className?: string;
   dropUp?: boolean;
   compact?: boolean;
+  leftIcon?: React.ReactNode;
+  labelPrefix?: string;
+  align?: "left" | "right";
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -1225,11 +1304,20 @@ function CustomSelect<T extends string | number>({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={`w-full flex items-center justify-between gap-2 rounded-lg bg-bg-app border text-text-primary outline-none transition-all cursor-pointer hover:border-border-strong focus-visible:ring-3 focus-visible:ring-primary-muted ${
-          compact ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-xs"
-        } ${open ? "border-primary-DEFAULT ring-3 ring-primary-muted" : "border-border-primary"}`}
+        className={
+          `w-full flex items-center justify-between gap-2 rounded-lg 
+          bg-bg-app border text-text-secondary outline-none transition-all cursor-pointer 
+          hover:border-border-strong focus-visible:ring-3 focus-visible:ring-primary-muted 
+          ${compact ? "px-2.5 py-1 text-xs" : "px-3 py-2 text-xs"} 
+          ${open ? "border-primary-DEFAULT ring-3 ring-primary-muted" : "border-border-primary"}`
+        }
       >
-        <span className="truncate">{selected?.label}</span>
+        <div className="flex items-center gap-2 truncate">
+          {leftIcon}
+          <span className="truncate">
+            {labelPrefix ? `${labelPrefix}${selected?.label ?? ""}` : selected?.label}
+          </span>
+        </div>
         <ChevronDown
           className={`w-3.5 h-3.5 shrink-0 text-text-muted transition-transform ${open ? "rotate-180" : ""}`}
         />
@@ -1239,7 +1327,9 @@ function CustomSelect<T extends string | number>({
         <ul
           role="listbox"
           aria-label={ariaLabel}
-          className={`absolute z-40 left-0 min-w-full p-1 rounded-xl bg-bg-card border border-border-primary shadow-2xl shadow-black/50 animate-in fade-in zoom-in-95 duration-100 ${
+          className={`absolute z-40 ${
+            align === "right" ? "right-0" : "left-0"
+          } min-w-full max-h-64 overflow-y-auto p-1.5 rounded-xl bg-bg-surface-elevated border border-border-primary shadow-2xl shadow-black/50 animate-in fade-in zoom-in-95 duration-100 ${
             dropUp ? "bottom-full mb-1.5 origin-bottom" : "top-full mt-1.5 origin-top"
           }`}
         >
@@ -1253,13 +1343,12 @@ function CustomSelect<T extends string | number>({
                     onChange(o.value);
                     setOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-lg text-xs text-left whitespace-nowrap transition-colors cursor-pointer ${
-                    active
+                  className={`w-full flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-lg text-xs text-left whitespace-nowrap transition-colors cursor-pointer ${active
                       ? "bg-primary-muted text-text-primary font-medium"
                       : "text-text-secondary hover:bg-bg-accent/60 hover:text-text-primary"
-                  }`}
+                    }`}
                 >
-                  {o.label}
+                  <span>{o.label}</span>
                   {active && <Check className="w-3.5 h-3.5 text-primary-DEFAULT shrink-0" />}
                 </button>
               </li>
@@ -1284,19 +1373,19 @@ function confirmView(
     case "toggle":
       return t.isActive
         ? {
-            icon: Power,
-            tone: "warning",
-            title: "¿Desactivar cuenta?",
-            confirmLabel: "Desactivar",
-            description: <>La cuenta {who} no podrá iniciar sesión y sus sesiones activas dejarán de funcionar. Podrás reactivarla cuando quieras.</>,
-          }
+          icon: Power,
+          tone: "warning",
+          title: "¿Desactivar cuenta?",
+          confirmLabel: "Desactivar",
+          description: <>La cuenta {who} no podrá iniciar sesión y sus sesiones activas dejarán de funcionar. Podrás reactivarla cuando quieras.</>,
+        }
         : {
-            icon: Power,
-            tone: "primary",
-            title: "¿Reactivar cuenta?",
-            confirmLabel: "Reactivar",
-            description: <>La cuenta {who} volverá a tener acceso al sistema con su contraseña actual.</>,
-          };
+          icon: Power,
+          tone: "primary",
+          title: "¿Reactivar cuenta?",
+          confirmLabel: "Reactivar",
+          description: <>La cuenta {who} volverá a tener acceso al sistema con su contraseña actual.</>,
+        };
     case "reset":
       return {
         icon: KeyRound,

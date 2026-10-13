@@ -79,6 +79,28 @@ export const authService = {
     }
   },
 
+  updateProfile: async (data: { fullName?: string; email?: string }): Promise<{ success: boolean; user?: User; error?: string }> => {
+    try {
+      const payload: { full_name?: string; email?: string } = {};
+      if (data.fullName !== undefined) payload.full_name = data.fullName.trim();
+      if (data.email !== undefined) payload.email = data.email.trim();
+
+      const updatedDTO = await apiFetch<UserPublicDTO>("/auth/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const updated = mapUser(updatedDTO);
+      store.setCurrentUser(updated);
+      return { success: true, user: updated };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof ApiError ? err.message : "Error al actualizar el perfil.",
+      };
+    }
+  },
+
   logout: async (): Promise<void> => {
     try {
       await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" });
