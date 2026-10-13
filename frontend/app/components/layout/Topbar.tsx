@@ -32,21 +32,21 @@ export function Topbar({ onToggleSidebar, onOpenProfile }: TopbarProps) {
       {/* Grupo Izquierdo: Botón Menú (Móvil) + Breadcrumbs y Título */}
       <div className="flex items-center gap-3 sm:gap-4 lg:gap-8 min-w-0">
         {/* Bloque de texto (Breadcrumbs + Título) */}
-        <div className="flex flex-col min-w-0">
+        <div className="flex flex-col min-w-0 gap-0.5">
           <div className="flex items-center gap-1 text-xs sm:text-sm text-text-muted font-medium">
             <button
               onClick={() => navigate('/dashboard')}
               className="text-text-muted hover:text-text-primary rounded-xl hover:bg-bg-surface-elevated cursor-pointer shrink-0 transition-colors"
               aria-label="Ir al inicio"
             >
-              <Home className="w-4 h-4" />
+              <Home className="w-3.5 h-3.5" />
             </button>
             <span>/</span>
             <span>{viewInfo.category}</span>
             <span>/</span>
             <span className="text-text-primary">{viewInfo.title}</span>
           </div>
-          <h1 className="text-base sm:text-lg font-bold font-special truncate">
+          <h1 className="text-base sm:text-[19px] font-bold font-special truncate">
             {viewInfo.title}
           </h1>
         </div>

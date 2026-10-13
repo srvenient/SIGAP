@@ -66,8 +66,8 @@
    * 3. ACENTO PRINCIPAL (Azul tecnológico)
    * Botones de acción general, enlaces, estados activos en menús.
    */
-  --color-primary-DEFAULT: var(--color-blue-600);
-  --color-primary-hover: var(--color-blue-500);
+  --color-primary-DEFAULT: #2783de;
+  --color-primary-hover: hsl(from var(--color-primary-DEFAULT) h s calc(l + var(--btn-adj-mult, 1) * 10) / alpha);;
   --color-primary-active: var(--color-blue-700);
   --color-primary-muted: color-mix(in srgb, var(--color-blue-500) 15%, transparent);
 
@@ -131,16 +131,14 @@ body {
 /* Utilidades de Diseño Empresarial con Tailwind v4 @utility */
 @utility card {
   background-color: var(--color-bg-surface);
-  border: 1px solid var(--color-border-default);
+  border: 1px solid var(--color-border-primary);
   border-radius: 0.75rem;
   box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
 }
 
 @utility card-header {
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--color-border-default);
   display: flex;
-  align-items: center;
   justify-content: space-between;
 }
 

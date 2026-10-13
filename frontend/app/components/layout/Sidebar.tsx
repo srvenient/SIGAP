@@ -20,7 +20,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import logo from "../../assets/png/logo.png"
-import avatar1 from "../../assets/webp/avatar1.webp"
+import avatar1 from "../../assets/png/avatar9.png"
 
 interface NavItem {
   title: string;
@@ -136,7 +136,6 @@ export function Sidebar({
       ];
     }
 
-    // Rol Soporte Técnico
     return [
       {
         category: "Infraestructura & Hardware",
@@ -354,18 +353,18 @@ export function Sidebar({
             /* ========================================================= */
             <div className="flex flex-col h-full overflow-hidden">
               {/* 1. Cabecera Corporativa: Identificador SIGAP + Sede + Colapsar */}
-              <div className="p-3 pb-2 relative shrink-0 border-b border-border-secondary" ref={dropdownRef}>
+              <div className="px-1.5 py-3 pb-2 relative shrink-0 border-b border-border-secondary" ref={dropdownRef}>
                 <div className="flex items-center justify-between gap-2 p-2">
                   {/* Identidad Corporativa & Selector de Sede */}
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="flex items-center gap-1 min-w-0 flex-1">
                     <img src={logo} alt="Logo" className="h-auto w-10 object-cover" />
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-col items-start gap-1 leading-none">
-                        <span className="font-special font-bold italic text-md tracking-wide uppercase">
+                      <div className="flex flex-col items-start leading-none">
+                        <span className="font-special font-bold italic text-lg tracking-wide uppercase">
                           SIGAP
                         </span>
-                        <span className="text-[9px] text-text-muted">
+                        <span className="text-[10.5px] text-text-muted">
                           Parqueo Inteligente
                         </span>
                       </div>
