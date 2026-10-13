@@ -1,15 +1,279 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Roobert';
+  src: url('/public/fonts/Roobert-Regular.woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Display';
+  src: url('/public/fonts/PlusJakartaDisplay-Regular.woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Display';
+  src: url('/public/fonts/PlusJakartaDisplay-Medium.woff2');
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Display';
+  src: url('/public/fonts/PlusJakartaDisplay-Bold.woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans: 'Plus Jakarta Display', system-ui, -apple-system, sans-serif;
+  --font-special: 'Roobert', system-ui, -apple-system, sans-serif;
+
+  /* 
+   * 1 y 2. FONDOS NEUTROS OSCUROS (Suaves para la vista, no negro puro)
+   * Usamos la escala 'neutral' que es un gris puro sin tintes azules ni cálidos.
+   */
+  /* Fondo principal de la app (#171717) */
+  --color-bg-app: #191919;
+  /* Tarjetas, sidebar, dashboard cards */
+  --color-bg-surface: #202020;
+  --color-bg-accent: #383836;
+  /* Modales, dropdowns y hover (#404040) */
+  --color-bg-surface-elevated: #202020;
+
+  /* BORDES Y SEPARADORES */
+  --color-border-primary: #383836;
+  --color-border-secondary: #2c2c2b;
+  --color-border-strong: #5f5e59;
+
+  /* TEXTOS (Alto contraste para legibilidad en modo oscuro) */
+  --color-text-primary: #f0efed;
+  /* Títulos principales, valores numéricos de recaudo */
+  --color-text-secondary: #ada9a3;
+  /* Textos regulares, descripciones */
+  --color-text-muted: #7d7a75;
+  /* Placeholders, labels secundarios */
+  --color-text-disabled: #5f5e59;
+
+  /* 
+   * 3. ACENTO PRINCIPAL (Azul tecnológico)
+   * Botones de acción general, enlaces, estados activos en menús.
+   */
+  --color-primary-DEFAULT: var(--color-blue-600);
+  --color-primary-hover: var(--color-blue-500);
+  --color-primary-active: var(--color-blue-700);
+  --color-primary-muted: color-mix(in srgb, var(--color-blue-500) 15%, transparent);
+
+  /* 
+   * 4. COLORES SEMÁNTICOS (Estados del parqueadero)
+   */
+
+  /* ÉXITO (Pagado, Solucionado, Talanquera Conectada, Cupos Disponibles) */
+  --color-status-success: var(--color-emerald-500);
+  --color-status-success-hover: var(--color-emerald-400);
+  --color-status-success-bg: color-mix(in srgb, var(--color-emerald-500) 15%, transparent);
+  --color-status-success-border: color-mix(in srgb, var(--color-emerald-500) 30%, transparent);
+
+  /* ALERTA (Ingresado/Pendiente de pago, Ticket Pendiente, Intervención manual de placa) */
+  --color-status-warning: var(--color-amber-500);
+  --color-status-warning-hover: var(--color-amber-400);
+  --color-status-warning-bg: color-mix(in srgb, var(--color-amber-500) 15%, transparent);
+  --color-status-warning-border: color-mix(in srgb, var(--color-amber-500) 30%, transparent);
+
+  /* ERROR/PELIGRO (Pago rechazado, Sin cupos, Dispositivo con error/desconectado) */
+  --color-status-error: var(--color-rose-500);
+  --color-status-error-bg: #e15b51;
+  --color-status-error-hover: #d44c42;
+  --color-status-error-border: color-mix(in srgb, var(--color-rose-500) 30%, transparent);
 }
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
+  background-color: var(--color-bg-app);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
+::selection {
+  background-color: var(--color-primary-muted);
+  color: var(--color-text-primary);
+}
+
+/* Scrollbar Corporativo Sutil */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-default);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-strong);
+}
+
+/* Utilidades de Diseño Empresarial con Tailwind v4 @utility */
+@utility card {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+@utility card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@utility card-body {
+  padding: 1.5rem;
+}
+
+@utility label {
+  font-family: var(--font-special);
+  font-size: 0.8438rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.375rem;
+  display: block;
+}
+
+@utility input {
+  width: 100%;
+  background-color: var(--color-bg-app);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-primary);
+  border-radius: 0.5rem;
+  padding: 0.6875rem 0.875rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition: all 140ms ease-in-out;
+  outline: none;
+
+  &::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.7;
   }
+
+  &:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  &:focus {
+    border-color: var(--color-primary-DEFAULT);
+    box-shadow: 0 0 0 3px var(--color-primary-muted);
+  }
+}
+
+@utility input-error {
+  border-color: var(--color-status-error) !important;
+
+  &:hover {
+    border-color: var(--color-status-error-hover) !important;
+  }
+
+  &:focus {
+    border-color: var(--color-status-error) !important;
+    box-shadow: 0 0 0 3px var(--color-status-error-bg) !important;
+  }
+}
+
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--color-primary-DEFAULT);
+  color: var(--color-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.5rem;
+  padding: 0.6875rem 1.25rem;
+  font-family: var(--font-special);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  line-height: 1.25rem;
+  cursor: pointer;
+  transition: all 140ms ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+
+  &:hover {
+    background-color: var(--color-primary-hover);
+  }
+
+  &:active {
+    background-color: var(--color-primary-active);
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+@utility btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--color-bg-surface-elevated);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 140ms ease;
+
+  &:hover {
+    background-color: var(--color-border-strong);
+    border-color: var(--color-border-strong);
+    color: var(--color-text-primary);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+@utility badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  background-color: var(--color-bg-surface-elevated);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-secondary);
+}
+
+@utility divider {
+  height: 1px;
+  width: 100%;
+  background-color: var(--color-border-default);
 }

@@ -9,6 +9,8 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { AuthProvider } from "./context/AuthContext";
+import { ToastProvider } from "./context/ToastContext";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -25,14 +27,15 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="es" className="dark">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>SIGAP - Sistema Integral de Gestión y Automatización de Parqueaderos</title>
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="bg-slate-950 text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -42,19 +45,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <AuthProvider>
+      <ToastProvider>
+        <Outlet />
+      </ToastProvider>
+    </AuthProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
+  let message = "Error inesperado";
+  let details = "Ocurrió una anomalía en la aplicación.";
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message = error.status === 404 ? "Página no encontrada (404)" : "Error";
     details =
       error.status === 404
-        ? "The requested page could not be found."
+        ? "El recurso o pantalla solicitada no existe."
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
@@ -62,14 +71,22 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
+    <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+      <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-4">
+        <h1 className="text-xl font-bold text-white">{message}</h1>
+        <p className="text-sm text-slate-400">{details}</p>
+        {stack && (
+          <pre className="w-full p-4 overflow-x-auto text-left text-xs bg-slate-950 rounded-xl text-rose-300 font-mono">
+            <code>{stack}</code>
+          </pre>
+        )}
+        <a
+          href="/"
+          className="inline-block px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold"
+        >
+          Volver al Inicio
+        </a>
+      </div>
     </main>
   );
 }
