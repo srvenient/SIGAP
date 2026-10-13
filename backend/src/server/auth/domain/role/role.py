@@ -9,8 +9,18 @@ if TYPE_CHECKING:
     from src.server.auth.domain.user.user import User
 
 
-class RoleName(Enum):
+class RoleName(str, Enum):
+    """Hereda de str para que `RoleName.ADMIN == "admin"` sea True al comparar con la BD."""
     ADMIN = "admin"
+    OPERATOR = "operator"
+    SUPPORT = "support"
+
+
+ROLE_DESCRIPTIONS: dict[RoleName, str] = {
+    RoleName.ADMIN: "Administrador del sistema",
+    RoleName.OPERATOR: "Operador de patio",
+    RoleName.SUPPORT: "Soporte técnico",
+}
 
 
 class RoleBase(SQLModel):

@@ -31,6 +31,12 @@ class PostgresUserRepository(UserRepository):
         result = await self.session.execute(select(func.count()).select_from(User))
         return result.scalar_one()
 
+    async def count_active_by_role(self, role_id: UUID) -> int:
+        result = await self.session.execute(
+            select(func.count()).select_from(User).where(User.role_id == role_id, User.is_active == True)  # noqa: E712
+        )
+        return result.scalar_one()
+
     async def save(self, user: User) -> User:
         self.session.add(user)
         await self.session.commit()

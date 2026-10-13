@@ -3,7 +3,9 @@ from uuid import UUID
 
 from core import security
 from src.server.shared.infrastructure.providers.system_clock import get_localized_now
-from src.server.auth.domain.exceptions import UsernameAlreadyExists, RoleNotFound, CannotModifySelf, UserNotFound
+from src.server.auth.domain.exceptions import UsernameAlreadyExists, RoleNotFound, CannotModifySelf, UserNotFound, \
+    LastActiveAdmin
+from src.server.auth.domain.role.role import RoleName
 from src.server.auth.domain.user.user import User, UserCreate, UserUpdate
 from src.server.auth.domain.user.user_repository import UserRepository
 from src.server.auth.domain.role.role_repository import RoleRepository
@@ -21,7 +23,7 @@ class UserService:
         self.role_repository = role_repository
         self.refresh_token_repository = refresh_token_repository
 
-    async def create_user(self, user_create: UserCreate):
+    async def create_user(self, user_create: UserCreate, must_change_password: bool = True) -> User:
         if await self.user_repository.find_by_username(user_create.username):
             raise UsernameAlreadyExists
 
@@ -33,7 +35,7 @@ class UserService:
             hashed_password=security.get_password_hash(user_create.password),
             role_id=user_create.role_id,
             is_active=user_create.is_active,
-            must_change_password=True,  # la contraseña inicial la conoce el admin
+            must_change_password=must_change_password,
         )
 
         return await self.user_repository.save(user)
@@ -61,6 +63,19 @@ class UserService:
 
         if "role_id" in changes and not await self.role_repository.find_by_id(changes["role_id"]):
             raise RoleNotFound
+
+        # Evita dejar el sistema sin administradores activos
+        loses_admin = (
+            user.is_active
+            and user.role is not None
+            and user.role.name == RoleName.ADMIN.value
+            and (
+                changes.get("is_active") is False
+                or ("role_id" in changes and changes["role_id"] != user.role_id)
+            )
+        )
+        if loses_admin and await self.user_repository.count_active_by_role(user.role_id) <= 1:  # type: ignore[arg-type]
+            raise LastActiveAdmin
 
         updated = await self.user_repository.update(user_id, changes)
 

@@ -20,20 +20,20 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 async def init_db() -> None:
-    from src.server.auth.domain.role.role import Role, RoleName
+    from src.server.auth.domain.role.role import Role, RoleName, ROLE_DESCRIPTIONS
     from src.server.auth.domain.user.user import User, UserCreate
 
     async with async_engine.begin() as conn:
         await conn.run_sync(lambda sync_conn: SQLModel.metadata.create_all(sync_conn))
 
     async with AsyncSessionLocal() as session:
-        role_statement = await session.exec(select(Role).where(Role.name == RoleName.ADMIN.value))
-        role: Role | None = role_statement.first()
-        if not role:
-            role = Role(name=RoleName.ADMIN.value, description="Administrador del sistema")
-            session.add(role)
-            await session.commit()
-            await session.refresh(role)
+        for role_name in RoleName:
+            existing = (await session.exec(select(Role).where(Role.name == role_name.value))).first()
+            if not existing:
+                session.add(Role(name=role_name.value, description=ROLE_DESCRIPTIONS[role_name]))
+        await session.commit()
+
+        role: Role = (await session.exec(select(Role).where(Role.name == RoleName.ADMIN.value))).one()
 
         user_statement = await session.exec(select(User).where(User.username == settings.FIRST_SUPERUSER))
         user: User | None = user_statement.first()
@@ -48,4 +48,4 @@ async def init_db() -> None:
                 password=settings.FIRST_SUPERUSER_PASSWORD,
                 role_id=role.id
             )
-            await user_service.create_user(user_in)
+            await user_service.create_user(user_in, must_change_password=False)

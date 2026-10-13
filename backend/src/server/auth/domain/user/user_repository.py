@@ -18,6 +18,9 @@ class UserRepository(ABC):
     async def count(self) -> int: ...
 
     @abstractmethod
+    async def count_active_by_role(self, role_id: UUID) -> int: ...
+
+    @abstractmethod
     async def save(self, user: User) -> User: ...
 
     @abstractmethod

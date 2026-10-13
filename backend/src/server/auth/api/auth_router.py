@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Request, Response, Depends, Cookie, status
+from fastapi import APIRouter, Request, Response, Depends, Cookie, status, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.responses import JSONResponse
 
@@ -18,6 +18,9 @@ REFRESH_COOKIE = "refresh_token"
 # El refresh token solo viaja hacia /auth/*, nunca en el resto de la API
 REFRESH_COOKIE_PATH = f"{settings.API_V1_STR}/auth"
 
+# Cookie para recordar la preferencia de persistencia en subsecuentes /refresh
+REMEMBER_COOKIE = "remember_session"
+
 
 def _base_cookie_kwargs() -> dict:
     prod = settings.ENVIRONMENT == "production"
@@ -28,16 +31,32 @@ def _base_cookie_kwargs() -> dict:
     }
 
 
-def _set_session_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+def _set_session_cookies(
+    response: Response,
+    access_token: str,
+    refresh_token: str,
+    remember_me: bool = True
+) -> None:
+    # Si remember_me es True, las cookies tienen max_age (permanecen 7 días tras cerrar el navegador)
+    # Si remember_me es False, max_age es None (Session Cookie: se elimina automáticamente al cerrar el navegador)
+    access_max_age = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60 if remember_me else None
+    refresh_max_age = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600 if remember_me else None
+
     response.set_cookie(
         ACCESS_COOKIE, access_token,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        max_age=access_max_age,
         path="/",
         **_base_cookie_kwargs(),
     )
     response.set_cookie(
         REFRESH_COOKIE, refresh_token,
-        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
+        max_age=refresh_max_age,
+        path=REFRESH_COOKIE_PATH,
+        **_base_cookie_kwargs(),
+    )
+    response.set_cookie(
+        REMEMBER_COOKIE, "1" if remember_me else "0",
+        max_age=refresh_max_age,
         path=REFRESH_COOKIE_PATH,
         **_base_cookie_kwargs(),
     )
@@ -47,6 +66,7 @@ def _clear_session_cookies(response: Response) -> None:
     # Deben coincidir path y atributos con los de set_cookie para que el navegador las borre
     response.delete_cookie(ACCESS_COOKIE, path="/", **_base_cookie_kwargs())
     response.delete_cookie(REFRESH_COOKIE, path=REFRESH_COOKIE_PATH, **_base_cookie_kwargs())
+    response.delete_cookie(REMEMBER_COOKIE, path=REFRESH_COOKIE_PATH, **_base_cookie_kwargs())
 
 
 def _unauthorized_and_clear(detail: str) -> JSONResponse:
@@ -62,9 +82,10 @@ async def login(
         response: Response,
         form: Annotated[OAuth2PasswordRequestForm, Depends()],
         auth_service: AuthServiceDep,
+        remember_me: Annotated[bool, Form()] = False,
 ):
     result = await auth_service.authenticate(form.username, form.password)
-    _set_session_cookies(response, result.access_token, result.refresh_token)
+    _set_session_cookies(response, result.access_token, result.refresh_token, remember_me=remember_me)
     return {
         "detail": "Login successful",
         "must_change_password": result.user.must_change_password,
@@ -78,6 +99,7 @@ async def refresh(
         response: Response,
         auth_service: AuthServiceDep,
         refresh_token: Annotated[str | None, Cookie()] = None,
+        remember_session: Annotated[str | None, Cookie()] = None,
 ):
     if not refresh_token:
         return _unauthorized_and_clear("Not authenticated")
@@ -87,7 +109,8 @@ async def refresh(
     except InvalidToken:
         return _unauthorized_and_clear("Could not validate credentials")
 
-    _set_session_cookies(response, result.access_token, result.refresh_token)
+    is_remember = remember_session == "1"
+    _set_session_cookies(response, result.access_token, result.refresh_token, remember_me=is_remember)
     return {"detail": "Session refreshed", "must_change_password": result.user.must_change_password}
 
 
@@ -121,9 +144,12 @@ async def change_password(
         body: UpdatePassword,
         user: SessionUserDep,  # permitido aunque must_change_password sea True
         auth_service: AuthServiceDep,
+        remember_session: Annotated[str | None, Cookie()] = None,
 ):
     access, refresh_token = await auth_service.change_password(
         user, body.current_password, body.new_password
     )
-    _set_session_cookies(response, access, refresh_token)
+    is_remember = remember_session == "1"
+    _set_session_cookies(response, access, refresh_token, remember_me=is_remember)
     return {"detail": "Password updated"}
+

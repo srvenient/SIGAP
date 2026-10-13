@@ -35,3 +35,6 @@ class RoleNotFound(UserError): ...
 
 
 class CannotModifySelf(UserError): ...
+
+
+class LastActiveAdmin(UserError): ...  # dejaría el sistema sin administradores activos

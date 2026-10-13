@@ -14,6 +14,7 @@ _ERRORS: dict[type[Exception], tuple[int, str]] = {
     e.UserNotFound: (status.HTTP_404_NOT_FOUND, "Usuario no encontrado"),
     e.RoleNotFound: (status.HTTP_400_BAD_REQUEST, "Rol no encontrado"),
     e.CannotModifySelf: (status.HTTP_400_BAD_REQUEST, "No puedes realizar esta acción en tu propia cuenta"),
+    e.LastActiveAdmin: (status.HTTP_400_BAD_REQUEST, "Debe existir al menos un administrador activo en el sistema"),
 }
 
 

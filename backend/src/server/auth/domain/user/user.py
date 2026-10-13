@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import DateTime, false
 from sqlmodel import Relationship, SQLModel, Field
 
+from src.server.auth.domain.role.role import RolePublic
 from src.server.shared.infrastructure.providers.system_clock import get_localized_now
 
 if TYPE_CHECKING:
@@ -18,7 +19,7 @@ class UserBase(SQLModel):
 
 
 class UserCreate(UserBase):
-    role_id: UUID = Field(default=None, nullable=False)
+    role_id: UUID
 
     password: str = Field(min_length=8, max_length=40)
 
@@ -77,11 +78,22 @@ class User(UserBase, table=True):
         sa_column_kwargs={"onupdate": get_localized_now},
     )
 
-    role: Optional["Role"] = Relationship(back_populates="users")
+    # "selectin": el rol se carga junto al usuario. El lazy-load por defecto
+    # falla en sesiones async (MissingGreenlet) al acceder a user.role.
+    role: Optional["Role"] = Relationship(
+        back_populates="users",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
 
 
 class UserPublic(UserBase):
     id: UUID
+    role_id: UUID | None = None
+    role: RolePublic | None = None
+    must_change_password: bool = False
+    locked_until: datetime | None = None
+    last_login: datetime | None = None
+    created_at: datetime
 
 
 class UsersPublic(SQLModel):

@@ -4,6 +4,7 @@ from fastapi import Depends, Cookie, HTTPException, status
 
 from src.server.auth.application.auth_service import AuthService
 from src.server.auth.application.user_service import UserService
+from src.server.auth.domain.role.role import RoleName
 from src.server.auth.domain.role.role_repository import RoleRepository
 from src.server.auth.domain.user.user import User
 from src.server.auth.domain.user.user_repository import UserRepository
@@ -78,9 +79,14 @@ CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
 
 def require_roles(*allowed: RoleName):
+    allowed_names = {r.value for r in allowed}
+
     async def checker(user: CurrentUserDep) -> User:
-        if user.role and user.role.name in allowed:
+        if user.role and user.role.name in allowed_names:
             return user
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Insufficient permissions")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Permisos insuficientes")
 
     return checker
+
+
+AdminUserDep = Annotated[User, Depends(require_roles(RoleName.ADMIN))]
