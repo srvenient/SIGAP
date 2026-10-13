@@ -88,7 +88,7 @@
   --color-status-warning-border: color-mix(in srgb, var(--color-amber-500) 30%, transparent);
 
   /* ERROR/PELIGRO (Pago rechazado, Sin cupos, Dispositivo con error/desconectado) */
-  --color-status-error: var(--color-rose-500);
+  --color-status-error: var(--color-red-400);
   --color-status-error-bg: #e15b51;
   --color-status-error-hover: #d44c42;
   --color-status-error-border: color-mix(in srgb, var(--color-rose-500) 30%, transparent);

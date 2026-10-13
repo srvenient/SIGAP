@@ -4,9 +4,10 @@ import { useAuth } from "../../context/AuthContext";
 
 export interface TopbarProps {
   onToggleSidebar: () => void;
+  onOpenProfile?: () => void;
 }
 
-export function Topbar({ onToggleSidebar }: TopbarProps) {
+export function Topbar({ onToggleSidebar, onOpenProfile }: TopbarProps) {
   const { role } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -75,9 +76,10 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         </div>
         
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={onOpenProfile}
           className="p-2 text-text-muted hover:text-text-primary rounded-full hover:bg-bg-surface-elevated transition-colors cursor-pointer"
-          aria-label="Home"
+          aria-label="Configuración de la cuenta"
+          title="Configuración de la cuenta"
         >
           <Settings className="w-5 h-5" />
         </button>

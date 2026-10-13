@@ -7,27 +7,18 @@ import {
   Camera,
   LogOut,
   LifeBuoy,
-  Check,
-  Plus,
   Search,
   LayoutDashboard,
-  Users,
-  DollarSign,
-  FileText,
-  ShieldCheck,
   ChevronsUpDown,
   ChevronDown,
-  Bell,
   PanelLeft,
   PanelLeftOpen,
   User,
   Settings,
   Cpu,
-  Building2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
-import { INITIAL_BRANCHES, type ParkingBranch } from "../../types/branch";
 import logo from "../../assets/png/logo.png"
 import avatar1 from "../../assets/webp/avatar1.webp"
 
@@ -46,36 +37,22 @@ interface NavSection {
 export interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
-  selectedBranch: ParkingBranch;
-  onSelectBranch: (branch: ParkingBranch) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  onOpenProfile?: () => void;
 }
-
-// Iniciales de la sede (ej. "Sede Principal" -> "SP")
-const getBranchInitials = (name: string): string => {
-  if (!name) return "SP";
-  const words = name.trim().split(/\s+/);
-  if (words.length >= 2) {
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-};
 
 export function Sidebar({
   isOpen,
   onClose,
-  selectedBranch,
-  onSelectBranch,
   isCollapsed = false,
   onToggleCollapse,
+  onOpenProfile,
 }: SidebarProps) {
   const { user, role, logout } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [branches] = useState<ParkingBranch[]>(INITIAL_BRANCHES);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -89,9 +66,6 @@ export function Sidebar({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
-        setIsDropdownOpen(false);
-      }
       if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setIsUserMenuOpen(false);
       }
@@ -99,7 +73,6 @@ export function Sidebar({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsDropdownOpen(false);
         setIsUserMenuOpen(false);
         setShowLogoutModal(false);
       }
@@ -337,12 +310,12 @@ export function Sidebar({
                         type="button"
                         onClick={() => {
                           setIsUserMenuOpen(false);
-                          navigate("/dashboard/users");
+                          onOpenProfile?.();
                         }}
                         className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-app transition-colors cursor-pointer"
                       >
-                        <User className="w-3.5 h-3.5 text-text-muted" />
-                        <span>Perfil de Usuario</span>
+                        <Settings className="w-3.5 h-3.5 text-text-muted" />
+                        <span>Configuración de cuenta</span>
                       </button>
 
                       <button
@@ -535,11 +508,11 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="w-full flex items-center justify-between gap-2.5 px-2 py-1.5 rounded-lg bg-bg-accent/80 border border-border-secondary/80 hover:border-border-strong/60 transition-colors cursor-pointer text-left group shadow-xs"
+                  className="w-full flex items-center justify-between gap-2.5 px-2 py-1.5 rounded-lg bg-bg-accent/80 border border-border-strong/60 transition-colors cursor-pointer text-left group shadow-xs"
                   title="Opciones de cuenta"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="relative w-8 h-8 rounded-lg flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0 shadow-xs">
+                    <div className="relative w-7 h-7 rounded-lg flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0 shadow-xs">
                       <img src={avatar1} alt="avatar" className="w-full h-full rounded-full" />
                       <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-status-success ring-2 ring-bg-surface" />
                     </div>
@@ -560,18 +533,35 @@ export function Sidebar({
                 {/* 5. Popover del Menú de Usuario */}
                 {isUserMenuOpen && (
                   <div className="absolute left-2.5 right-2.5 bottom-full mb-1.5 z-50 bg-bg-surface-elevated border border-border-primary rounded-xl shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-100">
-                    {/* Header del Perfil en Popover */}
-                    <div className="flex items-center gap-2.5 p-2 border-b border-border-secondary">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0">
-                        <img src={avatar1} alt="avatar" className="w-full h-full rounded-full" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold text-text-primary truncate leading-tight">
-                          {user?.username || "Administrador"}
-                        </p>
-                        <p className="text-[10px] text-text-muted truncate mt-0.5 font-mono">
-                          {getRoleDisplayName(role)}
-                        </p>
+                    {/* Header del Perfil en Popover: Configuración a la izquierda del perfil */}
+                    <div className="flex items-center gap-2 p-2 border-b border-border-secondary">
+                      {/* Botón de configuración a la izquierda */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          onOpenProfile?.();
+                        }}
+                        className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-app transition-colors cursor-pointer shrink-0"
+                        title="Configuración de la cuenta"
+                        aria-label="Configuración de la cuenta"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
+
+                      {/* Información del Perfil (Avatar + Nombre + Rol) */}
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0">
+                          <img src={avatar1} alt="avatar" className="w-full h-full rounded-full" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-text-primary truncate leading-tight">
+                            {user?.username || "Administrador"}
+                          </p>
+                          <p className="text-[10px] text-text-muted truncate mt-0.5 font-mono">
+                            {getRoleDisplayName(role)}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
@@ -581,36 +571,12 @@ export function Sidebar({
                         type="button"
                         onClick={() => {
                           setIsUserMenuOpen(false);
-                          navigate("/dashboard/users");
+                          onOpenProfile?.();
                         }}
                         className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-app transition-colors cursor-pointer"
                       >
                         <User className="w-3.5 h-3.5 text-text-muted" />
-                        <span>Perfil de Usuario</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsUserMenuOpen(false);
-                          navigate("/dashboard/devices");
-                        }}
-                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-app transition-colors cursor-pointer"
-                      >
-                        <Cpu className="w-3.5 h-3.5 text-text-muted" />
-                        <span>Consola de Dispositivos</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsUserMenuOpen(false);
-                          navigate("/dashboard/feature-in-progress?f=ajustes");
-                        }}
-                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-app transition-colors cursor-pointer"
-                      >
-                        <Settings className="w-3.5 h-3.5 text-text-muted" />
-                        <span>Configuración del Sistema</span>
+                        <span>Configuración de la cuenta</span>
                       </button>
 
                       <div className="pt-1 border-t border-border-secondary">
@@ -620,7 +586,7 @@ export function Sidebar({
                             setIsUserMenuOpen(false);
                             setShowLogoutModal(true);
                           }}
-                          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-status-error hover:bg-status-error-bg transition-colors cursor-pointer"
+                          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-status-error hover:text-text-primary hover:bg-bg-accent/40 transition-colors cursor-pointer"
                         >
                           <LogOut className="w-3.5 h-3.5" />
                           <span>Cerrar Sesión</span>
