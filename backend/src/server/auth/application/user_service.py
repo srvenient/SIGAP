@@ -2,9 +2,10 @@ import secrets
 from uuid import UUID
 
 from core import security
+from core.config import settings
 from src.server.shared.infrastructure.providers.system_clock import get_localized_now
 from src.server.auth.domain.exceptions import UsernameAlreadyExists, EmailAlreadyExists, RoleNotFound, \
-    CannotModifySelf, UserNotFound, LastActiveAdmin
+    CannotModifySelf, UserNotFound, LastActiveAdmin, CannotModifySuperuser
 from src.server.auth.domain.role.role import RoleName
 from src.server.auth.domain.user.user import User, UserCreate, UserUpdate
 from src.server.auth.domain.user.user_repository import UserRepository
@@ -57,6 +58,9 @@ class UserService:
 
     async def update_user(self, actor: User, user_id: UUID, data: UserUpdate) -> User:
         user = await self.get_user(user_id)
+        if user.username == settings.FIRST_SUPERUSER:
+            raise CannotModifySuperuser
+
         changes = data.model_dump(exclude_none=True)
 
         # Evita que el admin se bloquee a sí mismo (desactivarse o quitarse el rol)
@@ -93,6 +97,9 @@ class UserService:
     async def reset_password(self, actor: User, user_id: UUID) -> str:
         """Genera una contraseña temporal. Se devuelve una sola vez al admin."""
         user = await self.get_user(user_id)
+        if user.username == settings.FIRST_SUPERUSER:
+            raise CannotModifySuperuser
+
         if actor.id == user.id:
             raise CannotModifySelf  # el admin usa /auth/change-password para la suya
 
@@ -107,7 +114,10 @@ class UserService:
         return temporary
 
     async def unlock_user(self, user_id: UUID) -> None:
-        await self.get_user(user_id)
+        user = await self.get_user(user_id)
+        if user.username == settings.FIRST_SUPERUSER:
+            raise CannotModifySuperuser
+
         await self.user_repository.update(
             user_id, {"failed_login_attempts": 0, "locked_until": None}
         )

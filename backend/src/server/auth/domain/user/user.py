@@ -118,11 +118,17 @@ class User(UserBase, table=True):
         sa_relationship_kwargs={"lazy": "selectin"},
     )
 
+    @property
+    def is_superuser(self) -> bool:
+        from core.config import settings
+        return self.username == settings.FIRST_SUPERUSER
+
 
 class UserPublic(UserBase):
     id: UUID
     role_id: UUID | None = None
     role: RolePublic | None = None
+    is_superuser: bool = False
     must_change_password: bool = False
     locked_until: datetime | None = None
     last_login: datetime | None = None

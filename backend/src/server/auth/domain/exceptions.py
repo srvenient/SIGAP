@@ -41,3 +41,6 @@ class CannotModifySelf(UserError): ...
 
 
 class LastActiveAdmin(UserError): ...  # dejaría el sistema sin administradores activos
+
+
+class CannotModifySuperuser(UserError): ...  # la cuenta superusuario no puede ser alterada

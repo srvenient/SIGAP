@@ -11,7 +11,7 @@ from src.server.auth.domain.token.token import TokenPayload
 from src.server.auth.domain.token.refresh_token import RefreshToken
 from src.server.auth.domain.token.refresh_token_repository import RefreshTokenRepository
 from src.server.auth.domain.exceptions import InvalidCredentials, AccountLocked, InactiveUser, InvalidToken, \
-    InvalidPassword, SamePassword
+    InvalidPassword, SamePassword, CannotModifySuperuser
 from src.server.auth.domain.user.user import User
 from src.server.auth.domain.user.user_repository import UserRepository
 from src.server.shared.infrastructure.providers.system_clock import get_localized_now
@@ -179,6 +179,9 @@ class AuthService:
     async def change_password(
             self, user: User, current_password: str, new_password: str
     ) -> tuple[str, str]:
+        if user.username == settings.FIRST_SUPERUSER:
+            raise CannotModifySuperuser
+
         if not security.verify_password(current_password, user.hashed_password):
             raise InvalidPassword
         if security.verify_password(new_password, user.hashed_password):

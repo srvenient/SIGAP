@@ -16,6 +16,7 @@ _ERRORS: dict[type[Exception], tuple[int, str]] = {
     e.RoleNotFound: (status.HTTP_400_BAD_REQUEST, "Rol no encontrado"),
     e.CannotModifySelf: (status.HTTP_400_BAD_REQUEST, "No puedes realizar esta acción en tu propia cuenta"),
     e.LastActiveAdmin: (status.HTTP_400_BAD_REQUEST, "Debe existir al menos un administrador activo en el sistema"),
+    e.CannotModifySuperuser: (status.HTTP_403_FORBIDDEN, "La cuenta superusuario está protegida y no puede ser modificada"),
 }
 
 
