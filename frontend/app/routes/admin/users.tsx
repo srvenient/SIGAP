@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useRevalidator } from "react-router";
+import { useRevalidator } from "react-router";
 import type { Route } from "./+types/users";
 import {
-  Users,
   UserPlus,
   AlertTriangle,
   Search,
@@ -27,8 +26,6 @@ import {
   Headset,
   ArrowRight,
   SlidersHorizontal,
-  ArrowUpDown,
-  LayoutDashboard,
   type LucideIcon,
 } from "lucide-react";
 import { userService } from "../../services/userService";
@@ -45,7 +42,6 @@ const ROLE_LABELS: Record<UserRole, { label: string; variant: "purple" | "primar
   support: { label: "Soporte Técnico", variant: "cyan" },
 };
 
-/** Descripción y acceso de cada rol, mostrado en los selectores. */
 const ROLE_META: Record<UserRole, { icon: LucideIcon; description: string }> = {
   admin: {
     icon: ShieldCheck,
@@ -66,7 +62,6 @@ type ConfirmState = { kind: ConfirmKind; target: User } | null;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-/** Orden personalizado de roles: de mayor a menor jerarquía operativa. */
 const ROLE_ORDER: Record<string, number> = { admin: 0, operator: 1, support: 2 };
 const NO_ROLE_RANK = 99;
 const roleRank = (name: string | null | undefined) =>
@@ -74,35 +69,6 @@ const roleRank = (name: string | null | undefined) =>
 
 type SortKey = "fullName" | "username" | "email" | "role" | "lastLogin" | "createdAt";
 type SortDir = "asc" | "desc";
-
-type SortOptionValue =
-  | "role-asc"
-  | "role-desc"
-  | "fullName-asc"
-  | "fullName-desc"
-  | "username-asc"
-  | "username-desc"
-  | "email-asc"
-  | "email-desc"
-  | "lastLogin-desc"
-  | "lastLogin-asc"
-  | "createdAt-desc"
-  | "createdAt-asc";
-
-const SORT_OPTIONS: { value: SortOptionValue; label: string }[] = [
-  { value: "role-asc", label: "Rol (Jerarquía)" },
-  { value: "role-desc", label: "Rol (Inverso)" },
-  { value: "fullName-asc", label: "Nombre (A - Z)" },
-  { value: "fullName-desc", label: "Nombre (Z - A)" },
-  { value: "username-asc", label: "Usuario (A - Z)" },
-  { value: "username-desc", label: "Usuario (Z - A)" },
-  { value: "email-asc", label: "Correo (A - Z)" },
-  { value: "email-desc", label: "Correo (Z - A)" },
-  { value: "lastLogin-desc", label: "Último acceso (Reciente)" },
-  { value: "lastLogin-asc", label: "Último acceso (Antiguo)" },
-  { value: "createdAt-desc", label: "Alta (Más reciente)" },
-  { value: "createdAt-asc", label: "Alta (Más antiguo)" },
-];
 
 const ROLE_FILTER_OPTIONS: { value: "todos" | UserRole; label: string }[] = [
   { value: "todos", label: "Todos los roles" },
@@ -285,16 +251,6 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
       setSortKey(key);
       setSortDir("asc");
     }
-  };
-
-  const currentSortValue: SortOptionValue = `${sortKey}-${sortDir}`;
-
-  const handleSortChange = (val: SortOptionValue) => {
-    const lastHyphen = val.lastIndexOf("-");
-    const key = val.substring(0, lastHyphen) as SortKey;
-    const dir = val.substring(lastHyphen + 1) as SortDir;
-    setSortKey(key);
-    setSortDir(dir);
   };
 
   const openCreate = () => {
@@ -498,30 +454,7 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {/* 1. Encabezado superior: Título a la izquierda, Breadcrumb a la derecha */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold font-special text-text-primary tracking-tight">
-            Directorio de cuentas
-          </h1>
-          <p className="text-xs text-text-muted mt-0.5">
-            {users.length} cuentas registradas en el sistema
-          </p>
-        </div>
-
-        <nav aria-label="Ruta de navegación" className="flex items-center gap-1.5 text-xs text-text-muted">
-          <LayoutDashboard className="w-3.5 h-3.5 text-text-muted shrink-0" />
-          <Link to="/dashboard" className="hover:text-text-primary transition-colors">
-            Dashboard
-          </Link>
-          <span className="text-text-disabled">-</span>
-          <span className="text-text-primary font-medium">Directorio de cuentas</span>
-        </nav>
-      </div>
-
-      {/* 2. Barra de Controles: Búsqueda y Filtros (izq), Ordenamiento y Acción Crear (der) */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        {/* Izquierda: Buscador y Filtro por Rol */}
         <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full lg:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
@@ -554,27 +487,15 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
           />
         </div>
 
-        {/* Derecha: Ordenamiento y Botón Nueva Cuenta */}
         <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full lg:w-auto justify-end">
-          <CustomSelect<SortOptionValue>
-            ariaLabel="Ordenar por"
-            value={currentSortValue}
-            onChange={handleSortChange}
-            className="w-full sm:w-56"
-            align="right"
-            labelPrefix="Ordenar por: "
-            leftIcon={<ArrowUpDown className="w-3.5 h-3.5 text-text-muted shrink-0" />}
-            options={SORT_OPTIONS}
-          />
-
           <button
             type="button"
             onClick={openCreate}
             disabled={roles.length === 0}
-            className="btn-primary w-full sm:w-auto shrink-0"
+            className="flex justify-center items-center gap-2 px-3 py-2 bg-primary-DEFAULT rounded-lg w-full sm:w-auto shrink-0 cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
-            <span>Nueva cuenta</span>
+            <span className="font-special font-bold text-[13px]">Nueva cuenta</span>
           </button>
         </div>
       </div>
@@ -1148,8 +1069,8 @@ function PageBtn({
       aria-current={active ? "page" : undefined}
       {...rest}
       className={`min-w-7 h-7 px-2 rounded-md text-xs font-medium flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${active
-          ? "bg-primary-DEFAULT text-white"
-          : "text-text-secondary hover:bg-bg-accent/60 hover:text-text-primary"
+        ? "bg-primary-DEFAULT text-white"
+        : "text-text-secondary hover:bg-bg-accent/60 hover:text-text-primary"
         }`}
     >
       {children}
@@ -1175,8 +1096,8 @@ function IconSquare({
       aria-label={title}
       onClick={onClick}
       className={`w-9.5 h-9.5 shrink-0 rounded-lg border flex items-center justify-center transition-colors cursor-pointer ${active
-          ? "border-status-success-border bg-status-success-bg"
-          : "border-border-primary bg-bg-app text-text-secondary hover:text-text-primary hover:border-border-strong"
+        ? "border-status-success-border bg-status-success-bg"
+        : "border-border-primary bg-bg-app text-text-secondary hover:text-text-primary hover:border-border-strong"
         }`}
     >
       {children}
@@ -1210,14 +1131,14 @@ function RoleSelector({
             aria-checked={active}
             onClick={() => onChange(r.id)}
             className={`group flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer outline-none focus-visible:ring-3 focus-visible:ring-primary-muted ${active
-                ? "border-primary-DEFAULT bg-primary-muted"
-                : "border-border-primary bg-bg-app hover:border-border-strong hover:bg-bg-accent/30"
+              ? "border-primary-DEFAULT bg-primary-muted"
+              : "border-border-primary bg-bg-app hover:border-border-strong hover:bg-bg-accent/30"
               }`}
           >
             <span
               className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${active
-                  ? "border-primary-DEFAULT/40 bg-bg-app text-primary-DEFAULT"
-                  : "border-border-primary bg-bg-card text-text-secondary group-hover:text-text-primary"
+                ? "border-primary-DEFAULT/40 bg-bg-app text-primary-DEFAULT"
+                : "border-border-primary bg-bg-card text-text-secondary group-hover:text-text-primary"
                 }`}
             >
               <Icon className="w-4 h-4" />
@@ -1327,11 +1248,9 @@ function CustomSelect<T extends string | number>({
         <ul
           role="listbox"
           aria-label={ariaLabel}
-          className={`absolute z-40 ${
-            align === "right" ? "right-0" : "left-0"
-          } min-w-full max-h-64 overflow-y-auto p-1.5 rounded-xl bg-bg-surface-elevated border border-border-primary shadow-2xl shadow-black/50 animate-in fade-in zoom-in-95 duration-100 ${
-            dropUp ? "bottom-full mb-1.5 origin-bottom" : "top-full mt-1.5 origin-top"
-          }`}
+          className={`absolute z-40 ${align === "right" ? "right-0" : "left-0"
+            } min-w-full max-h-64 overflow-y-auto p-1.5 rounded-xl bg-bg-surface-elevated border border-border-primary shadow-2xl shadow-black/50 animate-in fade-in zoom-in-95 duration-100 ${dropUp ? "bottom-full mb-1.5 origin-bottom" : "top-full mt-1.5 origin-top"
+            }`}
         >
           {options.map((o) => {
             const active = o.value === value;
@@ -1344,8 +1263,8 @@ function CustomSelect<T extends string | number>({
                     setOpen(false);
                   }}
                   className={`w-full flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-lg text-xs text-left whitespace-nowrap transition-colors cursor-pointer ${active
-                      ? "bg-primary-muted text-text-primary font-medium"
-                      : "text-text-secondary hover:bg-bg-accent/60 hover:text-text-primary"
+                    ? "bg-primary-muted text-text-primary font-medium"
+                    : "text-text-secondary hover:bg-bg-accent/60 hover:text-text-primary"
                     }`}
                 >
                   <span>{o.label}</span>
