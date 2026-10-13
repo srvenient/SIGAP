@@ -76,7 +76,7 @@ export default function LoginPage() {
     const newFieldErrors: { username?: string; password?: string } = {};
 
     if (!username.trim()) {
-      newFieldErrors.username = "Por favor ingrese su usuario";
+      newFieldErrors.username = "Por favor ingrese su usuario o correo";
     }
 
     if (!password.trim()) {
@@ -102,7 +102,7 @@ export default function LoginPage() {
           // Error 401: Credenciales inválidas (InvalidCredentials)
           setAuthError({
             type: "credentials",
-            message: res.error || "Nombre de usuario o contraseña incorrectos",
+            message: res.error || "Usuario o correo y contraseña incorrectos",
           });
         } else if (status === 403) {
           // Error 403: Usuario inactivo (InactiveUser)
@@ -183,7 +183,7 @@ export default function LoginPage() {
                   htmlFor="username"
                   className={`label transition-colors ${fieldErrors.username || isCredentialsError ? "text-rose-400" : ""}`}
                 >
-                  Usuario
+                  Usuario o correo
                 </label>
                 <div className="relative">
                   <span
@@ -199,7 +199,7 @@ export default function LoginPage() {
                     autoComplete="username"
                     value={username}
                     onChange={handleUsernameChange}
-                    placeholder="Escribe tu usuario"
+                    placeholder="Usuario o correo electrónico"
                     className={`input pl-10 text-sm ${fieldErrors.username || isCredentialsError ? "input-error" : ""}`}
                   />
                 </div>
@@ -293,7 +293,7 @@ export default function LoginPage() {
                   isAccountLocked
                     ? "Acceso bloqueado temporalmente por seguridad"
                     : !isFormValid
-                      ? "Ingrese su usuario y contraseña para habilitar el acceso"
+                      ? "Ingrese su usuario o correo y contraseña para habilitar el acceso"
                       : "Acceder al Sistema"
                 }
               >

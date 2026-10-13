@@ -10,6 +10,8 @@ export interface Role {
 export interface User {
   id: string;
   username: string;
+  fullName: string | null;
+  email: string | null;
   role: UserRole | null;
   roleId: string | null;
   isActive: boolean;
@@ -17,6 +19,7 @@ export interface User {
   lockedUntil: string | null;
   lastLogin: string | null;
   createdAt: string;
+  isSuperuser?: boolean;
 }
 
 export interface LoginCredentials {

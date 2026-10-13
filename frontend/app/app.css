@@ -120,7 +120,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-default);
+  background: var(--color-border-primary);
   border-radius: 9999px;
 }
 
@@ -158,7 +158,7 @@ body {
 @utility input {
   width: 100%;
   background-color: var(--color-bg-app);
-  border: 1px solid var(--color-border-default);
+  border: 1px solid var(--color-border-primary);
   color: var(--color-text-primary);
   border-radius: 0.5rem;
   padding: 0.6875rem 0.875rem;
@@ -237,7 +237,7 @@ body {
   gap: 0.5rem;
   background-color: var(--color-bg-surface-elevated);
   color: var(--color-text-secondary);
-  border: 1px solid var(--color-border-default);
+  border: 1px solid var(--color-border-primary);
   border-radius: 0.5rem;
   padding: 0.625rem 1rem;
   font-weight: 500;
@@ -266,12 +266,12 @@ body {
   font-weight: 500;
   letter-spacing: 0.025em;
   background-color: var(--color-bg-surface-elevated);
-  border: 1px solid var(--color-border-default);
+  border: 1px solid var(--color-border-primary);
   color: var(--color-text-secondary);
 }
 
 @utility divider {
   height: 1px;
   width: 100%;
-  background-color: var(--color-border-default);
+  background-color: var(--color-border-primary);
 }

@@ -18,11 +18,20 @@ export const userService = {
     return res.roles;
   },
 
-  async create(data: { username: string; password: string; roleId: string; isActive?: boolean }): Promise<User> {
+  async create(data: {
+    username: string;
+    fullName?: string;
+    email?: string;
+    password: string;
+    roleId: string;
+    isActive?: boolean;
+  }): Promise<User> {
     const dto = await apiFetch<UserPublicDTO>("/users", {
       method: "POST",
       body: JSON.stringify({
         username: data.username,
+        full_name: data.fullName || null,
+        email: data.email || null,
         password: data.password,
         role_id: data.roleId,
         is_active: data.isActive ?? true,

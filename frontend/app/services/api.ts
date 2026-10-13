@@ -11,6 +11,8 @@ export class ApiError extends Error {
 export interface UserPublicDTO {
   id: string;
   username: string;
+  full_name?: string | null;
+  email?: string | null;
   is_active: boolean;
   role_id: string | null;
   role: { id: string; name: string; description?: string | null } | null;
@@ -18,12 +20,15 @@ export interface UserPublicDTO {
   locked_until: string | null;
   last_login: string | null;
   created_at: string;
+  is_superuser?: boolean;
 }
 
 export function mapUser(dto: UserPublicDTO): User {
   return {
     id: dto.id,
     username: dto.username,
+    fullName: dto.full_name ?? null,
+    email: dto.email ?? null,
     role: (dto.role?.name as UserRole) ?? null,
     roleId: dto.role_id,
     isActive: dto.is_active,
@@ -31,6 +36,7 @@ export function mapUser(dto: UserPublicDTO): User {
     lockedUntil: dto.locked_until,
     lastLogin: dto.last_login,
     createdAt: dto.created_at,
+    isSuperuser: Boolean(dto.is_superuser ?? (dto.username === "admin")),
   };
 }
 

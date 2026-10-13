@@ -8,6 +8,8 @@ import {
   HelpCircle,
   AlertTriangle,
   LogOut,
+  ShieldCheck,
+  Lock,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
@@ -32,17 +34,18 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const { user, role, logout } = useAuth();
   const { toast } = useToast();
 
-  const isEnforced = Boolean(user?.mustChangePassword);
+  const isSuperuser = Boolean(user?.isSuperuser || user?.username === "admin");
+  const isEnforced = !isSuperuser && Boolean(user?.mustChangePassword);
 
   // Estado del modal de cambio de contraseña
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(isEnforced);
 
-  // Si mustChangePassword es true, abrir automáticamente el modal de contraseña
+  // Si mustChangePassword es true, abrir automáticamente el modal de contraseña (salvo superuser)
   useEffect(() => {
-    if (user?.mustChangePassword) {
+    if (!isSuperuser && user?.mustChangePassword) {
       setIsPasswordModalOpen(true);
     }
-  }, [user?.mustChangePassword]);
+  }, [isSuperuser, user?.mustChangePassword]);
 
   // Permiso de acceso para soporte técnico (informativo)
   const [supportAccessEnabled, setSupportAccessEnabled] = useState(false);
@@ -210,6 +213,12 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                     <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-primary-muted text-primary-DEFAULT border border-primary-DEFAULT/30">
                       {getRoleDisplayName(role)}
                     </span>
+                    {isSuperuser && (
+                      <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" />
+                        Superuser
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-text-muted mt-0.5 font-mono">
                     {user ? `${user.username.toLowerCase()}@sigap.co` : "admin@sigap.co"}
@@ -228,24 +237,40 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-[13px] font-medium text-white">Contraseña</p>
-                    {isEnforced && (
+                    {isSuperuser ? (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                        Definida en .env
+                      </span>
+                    ) : isEnforced && (
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40">
                         Requerido
                       </span>
                     )}
                   </div>
                   <p className="text-[12px] text-text-muted mt-0.5">
-                    Establece una contraseña para tu cuenta
+                    {isSuperuser
+                      ? "La cuenta superusuario está protegida y sus credenciales se administran desde el archivo .env."
+                      : "Establece una contraseña para tu cuenta"}
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsPasswordModalOpen(true)}
-                  className="px-3.5 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333333] border border-[#3e3e3e] text-xs font-medium text-white transition-colors cursor-pointer shrink-0"
-                >
-                  Cambiar contraseña
-                </button>
+                {isSuperuser ? (
+                  <div
+                    className="px-3 py-1.5 rounded-lg bg-neutral-800/80 border border-neutral-700/60 text-xs text-text-muted flex items-center gap-1.5 shrink-0"
+                    title="Esta cuenta solo puede gestionarse mediante el archivo .env"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="font-mono">Protegida</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsPasswordModalOpen(true)}
+                    className="px-3.5 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333333] border border-[#3e3e3e] text-xs font-medium text-white transition-colors cursor-pointer shrink-0"
+                  >
+                    Cambiar contraseña
+                  </button>
+                )}
               </div>
             </div>
 

@@ -507,12 +507,12 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="w-full flex items-center justify-between gap-2.5 px-2 py-1.5 rounded-lg bg-bg-accent/80 border border-border-strong/60 transition-colors cursor-pointer text-left group shadow-xs"
+                  className="w-full flex items-center justify-between gap-2.5 px-2.5 py-1.5 rounded-lg bg-bg-accent/40 border border-border-strong/60 transition-colors cursor-pointer text-left group shadow-xs"
                   title="Opciones de cuenta"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="relative w-7 h-7 rounded-lg flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0 shadow-xs">
-                      <img src={avatar1} alt="avatar" className="w-full h-full rounded-full" />
+                      <img src={avatar1} alt="avatar" className="w-full h-full rounded-md" />
                       <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-status-success ring-2 ring-bg-surface" />
                     </div>
 
