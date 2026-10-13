@@ -94,8 +94,13 @@ class AuthService:
 
         return user
 
-    async def authenticate(self, username: str, password: str):
-        user: User | None = await self.user_repository.find_by_username(username)
+    async def authenticate(self, identifier: str, password: str):
+        identifier = identifier.strip()
+        # '@' no es válido en un username, así que distingue sin ambigüedad un correo
+        if "@" in identifier:
+            user: User | None = await self.user_repository.find_by_email(identifier)
+        else:
+            user = await self.user_repository.find_by_username(identifier)
 
         # Siempre se verifica un hash, exista o no el usuario (anti timing attack)
         hashed = user.hashed_password if user else security.DUMMY_HASHED_PASSWORD

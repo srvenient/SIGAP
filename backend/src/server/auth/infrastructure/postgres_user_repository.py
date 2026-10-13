@@ -21,6 +21,11 @@ class PostgresUserRepository(UserRepository):
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
 
+    async def find_by_email(self, email: str) -> User | None:
+        statement = select(User).where(func.lower(User.email) == email.strip().lower())
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
+
     async def find_all(self, skip: int = 0, limit: int = 50) -> list[User]:
         result = await self.session.execute(
             select(User).order_by(User.created_at).offset(skip).limit(limit)

@@ -12,6 +12,9 @@ class UserRepository(ABC):
     async def find_by_username(self, username: str) -> User | None: ...
 
     @abstractmethod
+    async def find_by_email(self, email: str) -> User | None: ...
+
+    @abstractmethod
     async def find_all(self, skip: int = 0, limit: int = 50) -> list[User]: ...
 
     @abstractmethod

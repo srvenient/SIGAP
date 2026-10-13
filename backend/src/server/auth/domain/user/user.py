@@ -1,7 +1,9 @@
+import re
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 
+from pydantic import field_validator
 from sqlalchemy import DateTime, false
 from sqlmodel import Relationship, SQLModel, Field
 
@@ -12,8 +14,14 @@ if TYPE_CHECKING:
     from src.server.auth.domain.role.role import Role
 
 
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
 class UserBase(SQLModel):
     username: str = Field(min_length=3, max_length=20, nullable=False)
+
+    full_name: Optional[str] = Field(default=None, max_length=80)
+    email: Optional[str] = Field(default=None, max_length=120)
 
     is_active: bool = Field(default=True, nullable=False)
 
@@ -22,6 +30,31 @@ class UserCreate(UserBase):
     role_id: UUID
 
     password: str = Field(min_length=8, max_length=40)
+
+    @field_validator("username")
+    @classmethod
+    def _username_format(cls, value: str) -> str:
+        # '@' queda reservado para distinguir un correo de un username en el login
+        if "@" in value or any(ch.isspace() for ch in value):
+            raise ValueError("El nombre de usuario no puede contener '@' ni espacios")
+        return value
+
+    @field_validator("full_name", mode="before")
+    @classmethod
+    def _clean_full_name(cls, value):
+        if isinstance(value, str):
+            value = " ".join(value.split())
+        return value or None
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def _clean_email(cls, value):
+        if not isinstance(value, str) or not value.strip():
+            return None
+        value = value.strip().lower()
+        if not _EMAIL_RE.match(value):
+            raise ValueError("Correo electrónico inválido")
+        return value
 
 
 class UserUpdate(SQLModel):

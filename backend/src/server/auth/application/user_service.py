@@ -3,8 +3,8 @@ from uuid import UUID
 
 from core import security
 from src.server.shared.infrastructure.providers.system_clock import get_localized_now
-from src.server.auth.domain.exceptions import UsernameAlreadyExists, RoleNotFound, CannotModifySelf, UserNotFound, \
-    LastActiveAdmin
+from src.server.auth.domain.exceptions import UsernameAlreadyExists, EmailAlreadyExists, RoleNotFound, \
+    CannotModifySelf, UserNotFound, LastActiveAdmin
 from src.server.auth.domain.role.role import RoleName
 from src.server.auth.domain.user.user import User, UserCreate, UserUpdate
 from src.server.auth.domain.user.user_repository import UserRepository
@@ -27,11 +27,16 @@ class UserService:
         if await self.user_repository.find_by_username(user_create.username):
             raise UsernameAlreadyExists
 
+        if user_create.email and await self.user_repository.find_by_email(user_create.email):
+            raise EmailAlreadyExists
+
         if not await self.role_repository.find_by_id(user_create.role_id):
             raise RoleNotFound
 
         user = User(
             username=user_create.username,
+            full_name=user_create.full_name,
+            email=user_create.email,
             hashed_password=security.get_password_hash(user_create.password),
             role_id=user_create.role_id,
             is_active=user_create.is_active,

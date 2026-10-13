@@ -4,9 +4,9 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from core.config import settings
 from src.server.auth.application.user_service import UserService
-from src.server.auth.infrastructure.postgres_user_repository import PostgresUserRepository
-from src.server.auth.infrastructure.postgres_role_repository import PostgresRoleRepository
 from src.server.auth.infrastructure.postgres_refresh_token_repository import PostgresRefreshTokenRepository
+from src.server.auth.infrastructure.postgres_role_repository import PostgresRoleRepository
+from src.server.auth.infrastructure.postgres_user_repository import PostgresUserRepository
 
 async_engine = create_async_engine(str(settings.SQLALCHEMY_DATABASE_URI), echo=settings.DEBUG, future=True)
 

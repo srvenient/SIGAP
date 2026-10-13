@@ -5,12 +5,13 @@ from slowapi.errors import RateLimitExceeded
 from src.server.auth.domain import exceptions as e
 
 _ERRORS: dict[type[Exception], tuple[int, str]] = {
-    e.InvalidCredentials: (status.HTTP_401_UNAUTHORIZED, "Nombre de usuario o contraseña incorrectos"),
+    e.InvalidCredentials: (status.HTTP_401_UNAUTHORIZED, "Usuario o correo y contraseña incorrectos"),
     e.InactiveUser: (status.HTTP_403_FORBIDDEN, "Usuario inactivo"),
     e.InvalidToken: (status.HTTP_401_UNAUTHORIZED, "No se pudieron validar las credenciales"),
     e.InvalidPassword: (status.HTTP_400_BAD_REQUEST, "La contraseña actual es incorrecta"),
     e.SamePassword: (status.HTTP_400_BAD_REQUEST, "La nueva contraseña debe ser diferente a la actual"),
     e.UsernameAlreadyExists: (status.HTTP_409_CONFLICT, "El nombre de usuario ya existe"),
+    e.EmailAlreadyExists: (status.HTTP_409_CONFLICT, "El correo electrónico ya está registrado"),
     e.UserNotFound: (status.HTTP_404_NOT_FOUND, "Usuario no encontrado"),
     e.RoleNotFound: (status.HTTP_400_BAD_REQUEST, "Rol no encontrado"),
     e.CannotModifySelf: (status.HTTP_400_BAD_REQUEST, "No puedes realizar esta acción en tu propia cuenta"),
