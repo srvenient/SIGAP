@@ -13,7 +13,7 @@ const ADMIN_EXCLUSIVE_ROUTES = [
 ];
 
 export default function DashboardLayout() {
-  const { isAuthenticated, isLoading, role } = useAuth();
+  const { user, isAuthenticated, isLoading, role } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
@@ -34,6 +34,13 @@ export default function DashboardLayout() {
       return next;
     });
   };
+
+  // Abrir modal de configuración automáticamente si se requiere cambio de contraseña
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user?.mustChangePassword) {
+      setIsProfileOpen(true);
+    }
+  }, [isLoading, isAuthenticated, user?.mustChangePassword]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

@@ -56,7 +56,6 @@ export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<"todos" | UserRole>("todos");
 
-  // Crear
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -64,12 +63,10 @@ export default function AdminUsers() {
   const [createError, setCreateError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  // Editar rol
   const [editing, setEditing] = useState<User | null>(null);
   const [editRoleId, setEditRoleId] = useState("");
   const [editError, setEditError] = useState("");
 
-  // Contraseña temporal (se muestra una sola vez)
   const [tempPassword, setTempPassword] = useState<{ username: string; value: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -104,8 +101,6 @@ export default function AdminUsers() {
       u.username.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (roleFilter === "todos" || u.role === roleFilter)
   );
-
-  // ----- Acciones -----
 
   const openCreate = () => {
     setNewUsername("");
@@ -199,8 +194,6 @@ export default function AdminUsers() {
     await navigator.clipboard.writeText(tempPassword.value);
     setCopied(true);
   };
-
-  // ----- Render -----
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">

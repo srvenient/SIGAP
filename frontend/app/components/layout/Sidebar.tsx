@@ -108,7 +108,7 @@ export function Sidebar({
 
   const normalizedRole = (role || "").toLowerCase();
   const isAdmin = normalizedRole === "admin";
-  const isOperator = normalizedRole === "operador" || normalizedRole === "operator";
+  const isOperator = normalizedRole === "operator";
 
   // Módulos corporativos según rol
   const getNavSections = (): NavSection[] => {
@@ -128,9 +128,9 @@ export function Sidebar({
         {
           category: "Operación de Patio",
           items: [
-            { title: "Ingreso / Corrección Placa", path: "/dashboard/manual-entry", icon: Car },
-            { title: "Vehículos en Parqueadero", path: "/dashboard/vehicles", icon: Clock },
-            { title: "Reportar Incidencia", path: "/dashboard/operator-tickets", icon: LifeBuoy },
+            { title: "Ingreso / Corrección Placa", path: "/dashboard/feature-in-progress", icon: Car },
+            { title: "Vehículos en Parqueadero", path: "/dashboard/feature-in-progress", icon: Clock },
+            { title: "Reportar Incidencia", path: "/dashboard/feature-in-progress", icon: LifeBuoy },
           ],
         },
       ];
@@ -141,8 +141,8 @@ export function Sidebar({
       {
         category: "Infraestructura & Hardware",
         items: [
-          { title: "Consola de Dispositivos", path: "/dashboard/devices", icon: Camera },
-          { title: "Tickets de Soporte", path: "/dashboard/support-tickets", icon: Wrench },
+          { title: "Consola de Dispositivos", path: "/dashboard/feature-in-progress", icon: Camera },
+          { title: "Tickets de Soporte", path: "/dashboard/feature-in-progress", icon: Wrench },
         ],
       },
     ];
@@ -535,20 +535,6 @@ export function Sidebar({
                   <div className="absolute left-2.5 right-2.5 bottom-full mb-1.5 z-50 bg-bg-surface-elevated border border-border-primary rounded-xl shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-100">
                     {/* Header del Perfil en Popover: Configuración a la izquierda del perfil */}
                     <div className="flex items-center gap-2 p-2 border-b border-border-secondary">
-                      {/* Botón de configuración a la izquierda */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsUserMenuOpen(false);
-                          onOpenProfile?.();
-                        }}
-                        className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-app transition-colors cursor-pointer shrink-0"
-                        title="Configuración de la cuenta"
-                        aria-label="Configuración de la cuenta"
-                      >
-                        <Settings className="w-4 h-4" />
-                      </button>
-
                       {/* Información del Perfil (Avatar + Nombre + Rol) */}
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0">
@@ -566,14 +552,14 @@ export function Sidebar({
                     </div>
 
                     {/* Opciones del Menú */}
-                    <div className="py-0.5 space-y-0.5">
+                    <div className=" space-y-0.5">
                       <button
                         type="button"
                         onClick={() => {
                           setIsUserMenuOpen(false);
                           onOpenProfile?.();
                         }}
-                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-app transition-colors cursor-pointer"
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg mb-1.5 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-app transition-colors cursor-pointer"
                       >
                         <User className="w-3.5 h-3.5 text-text-muted" />
                         <span>Configuración de la cuenta</span>

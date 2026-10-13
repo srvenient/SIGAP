@@ -13,9 +13,13 @@ import {
   EyeOff,
   Building2,
   Lock,
+  AlertTriangle,
+  LogOut,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
+import { authService } from "../../services/authService";
 import avatar1 from "../../assets/webp/avatar1.webp";
 
 export interface ProfileModalProps {
@@ -33,21 +37,30 @@ interface SessionDevice {
 }
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-  const { user, role } = useAuth();
+  const { user, role, logout } = useAuth();
   const { toast } = useToast();
 
+  const isEnforced = Boolean(user?.mustChangePassword);
+
   // Estados de formularios y acciones
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(isEnforced);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [isSavingPass, setIsSavingPass] = useState(false);
 
-  // Permiso de acceso para soporte técnico
+  // Si mustChangePassword es true, abrir automáticamente el formulario
+  useEffect(() => {
+    if (user?.mustChangePassword) {
+      setShowPasswordForm(true);
+    }
+  }, [user?.mustChangePassword]);
+
+  // Permiso de acceso para soporte técnico (informativo)
   const [supportAccessEnabled, setSupportAccessEnabled] = useState(false);
 
-  // Lista de dispositivos conectados (según diseño de referencia)
+  // Lista de dispositivos conectados (informativa)
   const [devices, setDevices] = useState<SessionDevice[]>([
     {
       id: "dev-1",
@@ -79,17 +92,17 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const userId = `usr_${user?.id || "8e377fc8-885a-4b90-8efb-99170b385ddb"}`;
   const [hasCopiedId, setHasCopiedId] = useState(false);
 
-  // Cerrar con Escape
+  // Cerrar con Escape solo si NO es cambio obligatorio
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && !isEnforced) {
         onClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isEnforced]);
 
   if (!isOpen) return null;
 
@@ -128,30 +141,46 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     );
   };
 
-  const handleSavePassword = (e: React.FormEvent) => {
+  // Cambio de contraseña 100% funcional conectado al backend
+  const handleSavePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!currentPassword) {
-      toast("Ingresa tu contraseña actual", "error");
+      toast("Ingresa tu contraseña actual", "error", "Campo requerido");
       return;
     }
-    if (newPassword.length < 6) {
-      toast("La nueva contraseña debe tener al menos 6 caracteres", "error");
+    if (newPassword.length < 8) {
+      toast("La nueva contraseña debe tener al menos 8 caracteres", "error", "Requisito de seguridad");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      toast("La nueva contraseña debe ser diferente a la actual", "error", "Contraseña idéntica");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast("Las contraseñas no coinciden", "error");
+      toast("Las contraseñas no coinciden", "error", "Validación");
       return;
     }
 
     setIsSavingPass(true);
-    setTimeout(() => {
+    try {
+      const res = await authService.changePassword(currentPassword, newPassword);
+      if (res.success) {
+        toast("¡Contraseña actualizada exitosamente! Entorno operacional activo.", "success", "Seguridad");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setShowPasswordForm(false);
+        onClose();
+      } else {
+        toast(res.error || "No se pudo actualizar la contraseña", "error", "Error de servidor");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error al procesar la solicitud";
+      toast(msg, "error");
+    } finally {
       setIsSavingPass(false);
-      setShowPasswordForm(false);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      toast("Contraseña actualizada exitosamente", "success");
-    }, 600);
+    }
   };
 
   const handleTerminateSession = (deviceId: string) => {
@@ -164,10 +193,17 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     toast("Se cerraron todas las demás sesiones activas", "success");
   };
 
+  const handleLogoutFromModal = async () => {
+    await logout();
+    window.location.href = "/";
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/65 backdrop-blur-xs animate-in fade-in duration-150"
-      onClick={onClose}
+      onClick={() => {
+        if (!isEnforced) onClose();
+      }}
     >
       <div
         className="bg-[#202020] border border-[#333333] rounded-2xl w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 text-text-primary"
@@ -177,21 +213,51 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         <div className="flex items-center justify-between px-6 py-4.5 border-b border-[#2d2d2d] shrink-0">
           <div>
             <h2 className="text-base sm:text-lg font-bold font-special text-[#f5f5f5]">
-              Configuración de la cuenta
+              {isEnforced ? "Actualización de Seguridad Requerida" : "Configuración de la cuenta"}
             </h2>
             <p className="text-xs text-text-muted mt-0.5">
-              Administra tus credenciales, permisos y sesiones en SIGAP.
+              {isEnforced
+                ? "Debes establecer una nueva contraseña personal para continuar."
+                : "Administra tus credenciales, permisos y sesiones en SIGAP."}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-text-muted hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            aria-label="Cerrar modal"
-          >
-            <X className="w-4.5 h-4.5" />
-          </button>
+
+          {/* Si es cambio obligatorio, se muestra botón para cerrar sesión en lugar de cerrar el modal */}
+          {isEnforced ? (
+            <button
+              type="button"
+              onClick={handleLogoutFromModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-status-error hover:bg-status-error-bg/20 transition-colors cursor-pointer"
+              title="Salir de la sesión"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Cerrar sesión</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-text-muted hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              aria-label="Cerrar modal"
+            >
+              <X className="w-4.5 h-4.5" />
+            </button>
+          )}
         </div>
+
+        {/* Banner de cambio obligatorio si aplica */}
+        {isEnforced && (
+          <div className="mx-6 mt-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-200 shrink-0">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="text-xs">
+              <p className="font-semibold text-amber-300">Cambio de contraseña obligatorio</p>
+              <p className="opacity-90 mt-0.5 leading-relaxed">
+                Por políticas de seguridad del sistema SIGAP (primer acceso o contraseña restablecida),
+                es obligatorio configurar una nueva contraseña personal para desbloquear el acceso operacional.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Cuerpo desplazable */}
         <div className="overflow-y-auto p-6 space-y-7 divide-y divide-[#2d2d2d]">
@@ -221,28 +287,35 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             </div>
           </div>
 
-          {/* 2. Sección Contraseña */}
+          {/* 2. Sección Contraseña (100% Funcional con Backend) */}
           <div className="pt-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h4 className="text-sm font-semibold text-white">Contraseña</h4>
+                <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <span>Contraseña</span>
+                  {isEnforced && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                      Requerido
+                    </span>
+                  )}
+                </h4>
                 <p className="text-xs text-text-muted mt-0.5">
-                  Establece una contraseña segura para el acceso a tu cuenta.
+                  Establece una contraseña segura (mínimo 8 caracteres) para tu cuenta.
                 </p>
               </div>
 
-              {!showPasswordForm && (
+              {!showPasswordForm && !isEnforced && (
                 <button
                   type="button"
                   onClick={() => setShowPasswordForm(true)}
                   className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs font-medium text-white transition-colors cursor-pointer shrink-0 border border-white/10"
                 >
-                  Agregar contraseña
+                  Cambiar contraseña
                 </button>
               )}
             </div>
 
-            {/* Formulario desplegable para cambiar contraseña */}
+            {/* Formulario para cambiar contraseña */}
             {showPasswordForm && (
               <form
                 onSubmit={handleSavePassword}
@@ -250,13 +323,14 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               >
                 <div>
                   <label className="block text-[11px] font-medium text-text-muted mb-1">
-                    Contraseña actual
+                    Contraseña actual {isEnforced && "(o contraseña temporal inicial)"}
                   </label>
                   <input
                     type={showPass ? "text" : "password"}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Ingresa tu contraseña actual"
+                    required
                     className="w-full px-3 py-1.5 text-xs rounded-lg bg-bg-surface border border-border-primary text-white outline-none focus:border-primary-DEFAULT"
                   />
                 </div>
@@ -264,13 +338,15 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-medium text-text-muted mb-1">
-                      Nueva contraseña
+                      Nueva contraseña (mínimo 8 caracteres)
                     </label>
                     <input
                       type={showPass ? "text" : "password"}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Mínimo 8 caracteres"
+                      required
+                      minLength={8}
                       className="w-full px-3 py-1.5 text-xs rounded-lg bg-bg-surface border border-border-primary text-white outline-none focus:border-primary-DEFAULT"
                     />
                   </div>
@@ -283,6 +359,8 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Repetir nueva contraseña"
+                      required
+                      minLength={8}
                       className="w-full px-3 py-1.5 text-xs rounded-lg bg-bg-surface border border-border-primary text-white outline-none focus:border-primary-DEFAULT"
                     />
                   </div>
@@ -299,19 +377,22 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   </button>
 
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswordForm(false)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-white transition-colors cursor-pointer"
-                    >
-                      Cancelar
-                    </button>
+                    {!isEnforced && (
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswordForm(false)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-white transition-colors cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                    )}
                     <button
                       type="submit"
                       disabled={isSavingPass}
-                      className="px-3.5 py-1.5 rounded-lg bg-primary-DEFAULT hover:bg-primary-hover text-white text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary-DEFAULT hover:bg-primary-hover text-white text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      {isSavingPass ? "Guardando..." : "Actualizar"}
+                      {isSavingPass && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>{isSavingPass ? "Guardando..." : "Actualizar contraseña"}</span>
                     </button>
                   </div>
                 </div>

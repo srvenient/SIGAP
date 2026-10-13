@@ -60,6 +60,25 @@ export const authService = {
     }
   },
 
+  changePassword: async (currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await apiFetch<{ detail: string }>("/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
+      });
+      await authService.checkSession();
+      return { success: true };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof ApiError ? err.message : "Error al actualizar la contraseña.",
+      };
+    }
+  },
+
   logout: async (): Promise<void> => {
     try {
       await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" });
