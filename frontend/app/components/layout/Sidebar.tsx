@@ -470,20 +470,20 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="w-full flex items-center justify-between gap-2.5 px-2.5 py-0.5 rounded-lg transition-colors cursor-pointer text-left group shadow-xs"
+                  className="w-full flex items-center justify-between gap-2.5 px-2.5 py-1 rounded-lg transition-colors cursor-pointer text-left group shadow-xs"
                   title="Opciones de cuenta"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="relative w-8 h-9 rounded-lg flex items-center justify-center font-mono font-bold text-xs text-text-primary shrink-0 shadow-xs">
-                      <img src={avatar1} alt="avatar" className="w-full h-full rounded-md" />
-                      <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-status-success ring-2 ring-bg-surface" />
+                  <div className="flex items-center gap-2.5 min-w-0 h-full">
+                    <div className="relative w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-xs">
+                      <img src={avatar1} alt="avatar" className="w-full h-full rounded-md object-cover" />
+                      <p className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-status-success ring-2 ring-bg-surface" />
                     </div>
 
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-text-primary truncate leading-tight font-sans">
+                    <div className="min-w-0 flex-1 flex flex-col justify-center gap-1">
+                      <p className="text-xs font-semibold text-text-primary truncate leading-none mb-0.5 font-sans">
                         {user?.fullName || "Administrador"}
                       </p>
-                      <p className="text-[11px] text-text-muted truncate ">
+                      <p className="text-[11px] text-text-muted truncate leading-none">
                         {getRoleDisplayName(role)}
                       </p>
                     </div>
