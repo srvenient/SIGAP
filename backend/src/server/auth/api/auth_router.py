@@ -6,9 +6,9 @@ from starlette.responses import JSONResponse
 
 from core.config import settings
 from core.rate_limit import limiter
-from src.server.auth.api.deps import AuthServiceDep, SessionUserDep
+from src.server.auth.api.deps import AuthServiceDep, SessionUserDep, UserServiceDep
 from src.server.auth.domain.exceptions import InvalidToken
-from src.server.auth.domain.user.user import UserPublic, UpdatePassword
+from src.server.auth.domain.user.user import UserPublic, UpdatePassword, UpdateProfile
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -134,6 +134,18 @@ async def logout_all(response: Response, user: SessionUserDep, auth_service: Aut
 @auth_router.get("/me", response_model=UserPublic)
 async def me(user: SessionUserDep):
     return user
+
+
+@auth_router.patch("/profile", response_model=UserPublic)
+@limiter.limit(settings.AUTH_RATE_LIMIT)
+async def update_profile(
+        request: Request,
+        body: UpdateProfile,
+        user: SessionUserDep,
+        user_service: UserServiceDep,
+):
+    updated = await user_service.update_profile(user, body)
+    return UserPublic.model_validate(updated)
 
 
 @auth_router.post("/change-password")

@@ -7,7 +7,7 @@ from src.server.shared.infrastructure.providers.system_clock import get_localize
 from src.server.auth.domain.exceptions import UsernameAlreadyExists, EmailAlreadyExists, RoleNotFound, \
     CannotModifySelf, UserNotFound, LastActiveAdmin, CannotModifySuperuser
 from src.server.auth.domain.role.role import RoleName
-from src.server.auth.domain.user.user import User, UserCreate, UserUpdate
+from src.server.auth.domain.user.user import User, UserCreate, UserUpdate, UpdateProfile
 from src.server.auth.domain.user.user_repository import UserRepository
 from src.server.auth.domain.role.role_repository import RoleRepository
 from src.server.auth.domain.token.refresh_token_repository import RefreshTokenRepository
@@ -62,6 +62,11 @@ class UserService:
             raise CannotModifySuperuser
 
         changes = data.model_dump(exclude_none=True)
+
+        if "email" in changes and changes["email"] is not None:
+            existing_email = await self.user_repository.find_by_email(changes["email"])
+            if existing_email and existing_email.id != user_id:
+                raise EmailAlreadyExists
 
         # Evita que el admin se bloquee a sí mismo (desactivarse o quitarse el rol)
         if actor.id == user.id and (
@@ -121,3 +126,18 @@ class UserService:
         await self.user_repository.update(
             user_id, {"failed_login_attempts": 0, "locked_until": None}
         )
+
+    async def update_profile(self, user: User, data: UpdateProfile) -> User:
+        if user.username == settings.FIRST_SUPERUSER:
+            raise CannotModifySuperuser
+
+        changes = data.model_dump(exclude_none=True)
+        if not changes:
+            return user
+
+        if "email" in changes and changes["email"] is not None:
+            existing = await self.user_repository.find_by_email(changes["email"])
+            if existing and existing.id != user.id:
+                raise EmailAlreadyExists
+
+        return await self.user_repository.update(user.id, changes)  # type: ignore[return-value]

@@ -58,8 +58,32 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(SQLModel):
+    full_name: str | None = None
+    email: str | None = None
     role_id: UUID | None = None
     is_active: bool | None = None
+
+
+class UpdateProfile(SQLModel):
+    full_name: Optional[str] = Field(default=None, max_length=80)
+    email: Optional[str] = Field(default=None, max_length=120)
+
+    @field_validator("full_name", mode="before")
+    @classmethod
+    def _clean_full_name(cls, value):
+        if isinstance(value, str):
+            value = " ".join(value.split())
+        return value or None
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def _clean_email(cls, value):
+        if not isinstance(value, str) or not value.strip():
+            return None
+        value = value.strip().lower()
+        if not _EMAIL_RE.match(value):
+            raise ValueError("Correo electrónico inválido")
+        return value
 
 
 class UpdatePassword(SQLModel):
