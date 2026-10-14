@@ -41,6 +41,20 @@ echo "--------------------------------------------------------"
 COMMAND=$1
 
 case "$COMMAND" in
+  worker)
+    echo "=> Iniciando watcher de cámaras nativo en el Host (Opción A)..."
+    export API_URL="http://localhost:8000"
+
+    # Moverse al directorio backend donde está configurado uv y el .venv
+    cd "$PROJECT_ROOT/backend"
+
+    # Crear carpetas de simulación si decides usarlas en lugar de 'examples/images'
+    mkdir -p input/entrada input/salida input/procesadas
+
+    # Ejecutar el script usando uv dentro del contexto del backend
+    uv run python scripts/camera_worker.py
+    ;;
+
   dev)
     echo "=> Iniciando en modo DESARROLLO..."
     docker compose -f compose.dev.yml up --build
