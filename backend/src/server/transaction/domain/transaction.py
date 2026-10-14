@@ -1,14 +1,14 @@
-import re
+from datetime import datetime
 from datetime import datetime
 from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import field_validator
 from sqlalchemy import DateTime
-from sqlmodel import Relationship, SQLModel, Field
+from sqlmodel import SQLModel, Field
 
-from server.shared.infrastructure.providers.system_clock import get_localized_now
+from src.server.shared.infrastructure.providers.system_clock import get_localized_now
 
 
 class VehicleType(str, Enum):
