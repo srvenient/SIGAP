@@ -8,8 +8,6 @@ from core.db import init_db, async_engine, AsyncSessionLocal
 
 from src.server.auth.infrastructure.postgres_refresh_token_repository import PostgresRefreshTokenRepository
 
-import src.server.models  # noqa: F401
-
 CLEANUP_INTERVAL_SECONDS = 6 * 3600
 
 

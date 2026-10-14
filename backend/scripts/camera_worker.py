@@ -1,47 +1,135 @@
 import os
+import sys
+import time
 
+import cv2
+import requests
 from loguru import logger
 from ultralytics import YOLO
 
-from inference.detection import Detection
-from inference.plate_reader import PlateReader
-
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(BASE_DIR)
+
+from src.inference.detection import Detection
+from src.inference.plate_reader import PlateReader
+
+API_URL = os.getenv("API_URL", "http://localhost:8000/api/v1")
+
+# # --- CONFIGURACIÓN ARDUINO ---
+# # En Linux/Mac suele ser /dev/ttyUSB0 o /dev/ttyACM0. En Windows es COM3, COM4, etc.
+# ARDUINO_PORT = os.getenv("ARDUINO_PORT", "/dev/ttyUSB0")
+# ARDUINO_BAUD = int(os.getenv("ARDUINO_BAUD", "9600"))
+#
+# try:
+#     logger.info(f"Conectando al Arduino en {ARDUINO_PORT}...")
+#     arduino = serial.Serial(ARDUINO_PORT, ARDUINO_BAUD, timeout=1)
+#     time.sleep(2) # Tiempo necesario para que el Arduino se reinicie al abrir el puerto
+#     logger.success("Conexión Serial establecida con el Arduino.")
+# except Exception as e:
+#     logger.error(f"No se pudo conectar al Arduino. Verifica el puerto y la conexión física. Error: {e}")
+#     arduino = None
+
+ENTRY_DIR = os.path.join(BASE_DIR, "input", "entrada")
+EXIT_DIR = os.path.join(BASE_DIR, "input", "salida")
+PROCESSED_DIR = os.path.join(BASE_DIR, "input", "procesadas")
+OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+
+MODEL_PATH = os.path.join(BASE_DIR, "models", "YOLO", "SIGAP_model_small_v1.pt")
+
+for directory in [ENTRY_DIR, EXIT_DIR, PROCESSED_DIR, OUTPUT_DIR]:
+    os.makedirs(directory, exist_ok=True)
 
 
-def save_detected_image(frame, output_dir):
-    """
-    Saves the detected image with bounding boxes drawn on it.
-    """
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+def send_to_backend_with_retry(gate_type: str, plate: str, vehicle_type: str, max_retries: int = 3):
+    headers = {"Content-Type": "application/json"}
 
-    output_path = os.path.join(output_dir, "detected_image.jpg")
-    cv2.imwrite(output_path, frame)
-    logger.info(f"Detected image saved to {output_path}")
+    v_type_str = vehicle_type.value if hasattr(vehicle_type, 'value') else str(vehicle_type).split('.')[-1].lower()
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            if gate_type == "entrada":
+                url = f"{API_URL}/transactions/entry"
+                # Usar la variable sanitizada v_type_str
+                payload = {"plate": plate, "vehicle_type": v_type_str}
+                response = requests.post(url, json=payload, headers=headers, timeout=5)
+            else:
+                url = f"{API_URL}/transactions/exit/{plate}"
+                response = requests.post(url, headers=headers, timeout=5)
+
+            if response.status_code in (200, 201):
+                logger.success(f"Backend autorizó {gate_type}: {response.json()}")
+                # ¡BACKEND AUTORIZÓ! Procedemos a abrir la talanquera[cite: 6, 9]
+                # open_barrier(gate_type)
+                return True
+            else:
+                logger.error(f"Backend rechazó {gate_type} ({response.status_code}): {response.text}")
+                # No se abre la talanquera si hay error (ej. sin cupo o sin pagar)
+                return False
+
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Fallo de conexión (Intento {attempt}/{max_retries}). {e}")
+            if attempt < max_retries:
+                time.sleep(3)
+            else:
+                logger.error(f"Se agotaron los intentos de enviar la placa {plate} al backend.")
+                return False
 
 
-model_path = os.path.join(BASE_DIR, "models", "YOLO", "SIGAP_model_small_v1.pt")
+def process_image(image_path: str, gate_type: str, filename: str, detection, plate_reader):
+    image = cv2.imread(image_path)
+    if image is None:
+        os.rename(image_path, os.path.join(PROCESSED_DIR, f"error_{filename}"))
+        return
 
-model = YOLO(model_path)
-detection = Detection(model)
-plate_reader = PlateReader(use_gpu=True)  # Set to True to use GPU if available
+    frame = detection.detect(image.copy())
+    result = plate_reader.read_text(frame)
+
+    if result and result.license_plate:
+        logger.info(f"[{gate_type.upper()}] Placa reconocida: {result.license_plate} | Tipo: {result.vehicle_type}")
+
+        sent_success = send_to_backend_with_retry(
+            gate_type=gate_type,
+            plate=result.license_plate,
+            vehicle_type=result.vehicle_type
+        )
+
+        output_path = os.path.join(OUTPUT_DIR, f"detected_{filename}")
+        cv2.imwrite(output_path, frame)
+    else:
+        logger.warning(f"[{gate_type.upper()}] No se reconoció ninguna placa válida en {filename}")
+
+    os.rename(image_path, os.path.join(PROCESSED_DIR, filename))
+
+
+def watch_directories(detection, plate_reader):
+    logger.info("Iniciando monitoreo de cámaras locales (Worker IA con Arduino)...")
+    while True:
+        try:
+            for filename in os.listdir(ENTRY_DIR):
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    process_image(os.path.join(ENTRY_DIR, filename), "entrada", filename, detection, plate_reader)
+
+            for filename in os.listdir(EXIT_DIR):
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    process_image(os.path.join(EXIT_DIR, filename), "salida", filename, detection, plate_reader)
+
+            time.sleep(1)
+        except Exception as e:
+            logger.error(f"Error inesperado: {e}")
+            time.sleep(2)
+
 
 if __name__ == "__main__":
-    import cv2
+    if not os.path.exists(MODEL_PATH):
+        sys.exit(1)
 
-    # Test the detection with a sample image
-    image_path = os.path.join(BASE_DIR, "examples", "images", "3.jpeg")
-    image = cv2.imread(image_path)
+    yolo_model = YOLO(MODEL_PATH)
+    object_detection = Detection(yolo_model)
+    ocr_reader = PlateReader(use_gpu=True)
 
-    if image is not None:
-        frame = image.copy()
-        frame = detection.detect(frame)
-        result = plate_reader.read_text(frame)
-
-        if result:
-            print(f"Sanitized Plate: {result.license_plate}, Vehicle Type: {result.vehicle_type}")
-
-        save_detected_image(frame, "output")
-    else:
-        print(f"Failed to load image from {image_path}")
+    try:
+        watch_directories(object_detection, ocr_reader)
+    except KeyboardInterrupt:
+        # if arduino and arduino.is_open:
+        #     arduino.close()
+        sys.exit(0)

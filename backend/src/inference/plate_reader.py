@@ -4,8 +4,8 @@ from dataclasses import dataclass
 import easyocr
 from loguru import logger
 
-from processing.text_cleaner import sanitize_text
-from server.transaction.domain.transaction import VehicleType
+from src.processing.text_cleaner import sanitize_text
+from src.server.transaction.domain.transaction import VehicleType
 
 CAR_PATTERN = re.compile(r"^[A-Z]{3}\d{3}$")
 MOTO_PATTERN = re.compile(r"^[A-Z]{3}\d{2}[A-Z]?$")

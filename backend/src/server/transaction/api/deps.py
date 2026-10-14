@@ -15,7 +15,7 @@ def get_transaction_repository(session: SessionDep) -> TransactionRepository:
 TransactionRepositoryDep = Annotated[PostgresTransactionRepository, Depends(get_transaction_repository)]
 
 
-def get_transaction_service(transaction_repository: TransactionRepository) -> TransactionService:
+def get_transaction_service(transaction_repository: TransactionRepositoryDep) -> TransactionService:
     return TransactionService(transaction_repository)
 
 

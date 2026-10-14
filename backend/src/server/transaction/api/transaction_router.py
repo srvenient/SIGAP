@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 
-from server.transaction.api.deps import TransactionServiceDep
-from server.transaction.domain.transaction import TransactionPublic, TransactionCreate
+from src.server.transaction.api.deps import TransactionServiceDep
+from src.server.transaction.domain.transaction import TransactionPublic, TransactionCreate
 
 transaction_router = APIRouter(prefix="/transactions", tags=["Transactions"])
 

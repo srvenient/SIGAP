@@ -43,7 +43,7 @@ COMMAND=$1
 case "$COMMAND" in
   worker)
     echo "=> Iniciando watcher de cámaras nativo en el Host (Opción A)..."
-    export API_URL="http://localhost:8000"
+    export API_URL="http://localhost:8000/api/v1"
 
     # Moverse al directorio backend donde está configurado uv y el .venv
     cd "$PROJECT_ROOT/backend"

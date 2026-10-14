@@ -1,7 +1,7 @@
 from loguru import logger
 from ultralytics import YOLO
 
-from processing.preprocess_crop import process_crop
+from src.processing.preprocess_crop import process_crop
 
 
 class Detection:

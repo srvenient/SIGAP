@@ -22,6 +22,7 @@ AsyncSessionLocal = async_sessionmaker(
 async def init_db() -> None:
     from src.server.auth.domain.role.role import Role, RoleName, ROLE_DESCRIPTIONS
     from src.server.auth.domain.user.user import User, UserCreate
+    from src.server.transaction.domain.transaction import Transaction
 
     async with async_engine.begin() as conn:
         await conn.run_sync(lambda sync_conn: SQLModel.metadata.create_all(sync_conn))
