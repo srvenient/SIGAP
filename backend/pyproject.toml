@@ -2,7 +2,7 @@
 name = "app"
 version = "0.1.0"
 description = "Sistema Integral de Gestión y Automatización de Parqueaderos."
-requires-python = ">=3.14,<4.0"
+requires-python = ">=3.11, <3.13"
 dependencies = [
     "fastapi[standard-no-fastapi-cloud-cli]>=0.142.2,<1.0.0",
     "psycopg[binary,pool]>=3.3.6",
@@ -13,6 +13,8 @@ dependencies = [
     "pwdlib[argon2]>=0.3.1",
     "slowapi>=0.1.10",
     "ultralytics>=8.4.177",
+    "paddleocr>=3.7.0",
+    "easyocr>=1.7.2",
 ]
 
 [dependency-groups]
@@ -33,6 +35,9 @@ cu130 = [
 ]
 
 [tool.uv]
+environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
 conflicts = [
     [
         { extra = "cpu" },
