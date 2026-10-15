@@ -4,6 +4,7 @@ import time
 
 import cv2
 import requests
+# import serial
 from loguru import logger
 from ultralytics import YOLO
 
@@ -16,8 +17,7 @@ from src.inference.plate_reader import PlateReader
 API_URL = os.getenv("API_URL", "http://localhost:8000/api/v1")
 
 # # --- CONFIGURACIÓN ARDUINO ---
-# # En Linux/Mac suele ser /dev/ttyUSB0 o /dev/ttyACM0. En Windows es COM3, COM4, etc.
-# ARDUINO_PORT = os.getenv("ARDUINO_PORT", "/dev/ttyUSB0")
+# ARDUINO_PORT = os.getenv("ARDUINO_PORT", "COM3")
 # ARDUINO_BAUD = int(os.getenv("ARDUINO_BAUD", "9600"))
 #
 # try:
@@ -39,6 +39,18 @@ MODEL_PATH = os.path.join(BASE_DIR, "models", "YOLO", "SIGAP_model_small_v1.pt")
 for directory in [ENTRY_DIR, EXIT_DIR, PROCESSED_DIR, OUTPUT_DIR]:
     os.makedirs(directory, exist_ok=True)
 
+# def open_gate(gate_type: str):
+#     if arduino and arduino.is_open:
+#         try:
+#             command = b'E' if gate_type == "entry" else b'S'
+#             arduino.write(command)
+#             logger.info(f"🔌 Señal '{command.decode()}' enviada al Arduino (Talanquera {gate_type.upper()}).")
+#         except Exception as e:
+#             logger.error(f"Error al enviar comando al Arduino: {e}")
+#             # Aquí podrías generar una alerta técnica para el Administrador según la HU-05[cite: 6]
+#     else:
+#         logger.warning("Arduino desconectado. No se puede abrir la talanquera físicamente.")
+
 
 def send_to_backend_with_retry(gate_type: str, plate: str, vehicle_type: str, max_retries: int = 3):
     headers = {"Content-Type": "application/json"}
@@ -47,14 +59,15 @@ def send_to_backend_with_retry(gate_type: str, plate: str, vehicle_type: str, ma
 
     for attempt in range(1, max_retries + 1):
         try:
-            if gate_type == "entrada":
-                url = f"{API_URL}/transactions/entry"
-                # Usar la variable sanitizada v_type_str
-                payload = {"plate": plate, "vehicle_type": v_type_str}
-                response = requests.post(url, json=payload, headers=headers, timeout=5)
+            if gate_type == "entry":
+                response = requests.post(
+                    url=f"{API_URL}/transactions/entry",
+                    json={"plate": plate, "vehicle_type": v_type_str},
+                    headers=headers,
+                    timeout=5
+                )
             else:
-                url = f"{API_URL}/transactions/exit/{plate}"
-                response = requests.post(url, headers=headers, timeout=5)
+                response = requests.post(url=f"{API_URL}/transactions/exit/{plate}", headers=headers, timeout=5)
 
             if response.status_code in (200, 201):
                 logger.success(f"Backend autorizó {gate_type}: {response.json()}")
