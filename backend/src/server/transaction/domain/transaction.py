@@ -58,7 +58,6 @@ class TransactionUpdate(SQLModel):
     payment_method: Optional[str] = None
     payment_reference: Optional[str] = None
     manual_intervention: Optional[bool] = None
-    # No se permite actualizar la placa ni la hora de ingreso por seguridad.
 
 
 class Transaction(TransactionBase, table=True):
@@ -66,12 +65,9 @@ class Transaction(TransactionBase, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    # El registro de la fecha/hora de ingreso se toma automáticamente
     entry_time: datetime = Field(
         default_factory=get_localized_now, nullable=False, sa_type=DateTime(timezone=True)
     )
-
-    # Se actualiza cuando la talanquera de salida se abre exitosamente
     exit_time: Optional[datetime] = Field(
         default=None, sa_type=DateTime(timezone=True)
     )
