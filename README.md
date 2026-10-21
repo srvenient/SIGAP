@@ -23,6 +23,7 @@ Plataforma integral diseñada para la automatización, control de acceso vehicul
 - [Cómo comenzar](#cómo-comenzar)
   - [Requisitos](#requisitos)
   - [Inicio rápido (Docker)](#inicio-rápido-docker)
+  - [Worker de Cámaras (camera_worker.py)](#4-ejecución-del-worker-de-cámaras-camera_workerpy)
 - [Configuración del Sistema (.env)](#configuración-del-sistema-env)
 - [Documentación de la API](#documentación-de-la-api)
 - [Estructura del Proyecto](#estructura-del-proyecto)
@@ -71,6 +72,7 @@ Plataforma integral diseñada para la automatización, control de acceso vehicul
 
 - **Docker y Docker Compose** (**Obligatorio**).
 - **Git**.
+- **uv** (Recomendado para la ejecución en el Host del worker de cámaras con Python 3.12+).
 - *(Opcional)* **GPU NVIDIA** con controladores y **NVIDIA Container Toolkit** configurado para aceleración CUDA en inferencia.
 
 ---
@@ -102,32 +104,122 @@ El script `scripts/deploy.sh` detecta automáticamente si el host cuenta con una
 
 #### 3. Ejecución del proyecto
 
-Otorga permisos de ejecución al script:
-```bash
-chmod +x ./scripts/deploy.sh
-```
+El proyecto centraliza sus operaciones de despliegue y administración a través del script de automatización [`scripts/deploy.sh`](file:///home/srvenient/eternal-dev/fullstack/SIGAP/scripts/deploy.sh). A continuación se detalla cómo ejecutarlo en los diferentes sistemas operativos:
 
-Utiliza los siguientes comandos según el modo requerido:
+##### A. En Linux / WSL2
+1. Otorga permisos de ejecución al script (solo la primera vez):
+   ```bash
+   chmod +x ./scripts/deploy.sh
+   ```
+2. Ejecuta el comando deseado directamente con `./scripts/deploy.sh <comando>` o explícitamente mediante `bash scripts/deploy.sh <comando>`.
 
-- **Modo Desarrollo:** Levanta la base de datos (puerto 5432), el backend de FastAPI (puerto 8000) y el frontend con Vite (puerto 3000):
+##### B. En Windows (Git Bash / WSL)
+Dado que los scripts de automatización del proyecto están escritos en sintaxis Bash con comandos estándar de Unix/POSIX, para ejecutarlos en Windows se cuenta con las siguientes opciones:
+
+- **Opción recomendada: Git Bash** (incluido al instalar [Git for Windows](https://gitforwindows.org/)):
+  Abre la terminal de **Git Bash** en la raíz del proyecto y ejecuta:
   ```bash
-  ./scripts/deploy.sh dev
+  sh scripts/deploy.sh <comando>
+  # O alternativamente:
+  bash scripts/deploy.sh <comando>
+  ```
+  *(Nota: En Git Bash no es indispensable el comando `chmod +x` ya que la invocación directa con `sh` o `bash` delega la interpretación al ejecutable de Bash en Windows).*
+
+- **Opción WSL2 (Windows Subsystem for Linux):**
+  Abre tu terminal de distribución Linux (Ubuntu, Debian, etc.), navega a la ruta del proyecto y utiliza `./scripts/deploy.sh <comando>`.
+
+- **Opción PowerShell / CMD:**
+  Si tienes Git instalado y configurado en la variable de entorno `PATH` del sistema, puedes invocar Bash directamente:
+  ```powershell
+  bash scripts/deploy.sh <comando>
   ```
 
-- **Modo Desarrollo con Hot-Reload (Watch):** Sincroniza cambios de código en tiempo real sin reiniciar contenedores:
+##### Comandos disponibles en `deploy.sh`
+
+| Modo / Comando | Sintaxis (Linux / WSL) | Sintaxis (Windows - Git Bash) | Descripción |
+| :--- | :--- | :--- | :--- |
+| **Desarrollo** | `./scripts/deploy.sh dev` | `sh scripts/deploy.sh dev` | Levanta la base de datos (puerto 5432), backend FastAPI (puerto 8000) y frontend Vite (puerto 3000). |
+| **Hot-Reload (Watch)** | `./scripts/deploy.sh dev-watch` | `sh scripts/deploy.sh dev-watch` | Sincroniza cambios de código en caliente sin reiniciar contenedores. |
+| **Producción** | `./scripts/deploy.sh prod` | `sh scripts/deploy.sh prod` | Despliegue optimizado en segundo plano (*detached*) servido por Nginx (puerto 80). |
+| **Worker de Cámaras** | `./scripts/deploy.sh worker` | `sh scripts/deploy.sh worker` | Ejecuta el worker perimetral de visión artificial (LPR/ANPR) en el Host. |
+| **Detener entorno** | `./scripts/deploy.sh down` | `sh scripts/deploy.sh down` | Detiene y remueve los contenedores activos. |
+| **Ver registros** | `./scripts/deploy.sh logs` | `sh scripts/deploy.sh logs` | Muestra el registro en tiempo real de los contenedores Docker. |
+| **Limpieza Docker** | `./scripts/deploy.sh clean` | `sh scripts/deploy.sh clean` | Detiene los contenedores y ejecuta limpieza del sistema Docker. |
+
+#### 4. Ejecución del Worker de Cámaras (camera_worker.py)
+
+El script [`backend/scripts/camera_worker.py`](file:///home/srvenient/eternal-dev/fullstack/SIGAP/backend/scripts/camera_worker.py) opera como el agente perimetral de visión por computadora (LPR/ANPR). Se encarga de procesar las capturas vehiculares, detectar vehículos y placas mediante YOLO y OCR, y enviar automáticamente las transacciones al backend para la apertura de talanqueras o control de acceso vehicular.
+
+Debido a su interacción con hardware local (cámaras USB/RTSP o microcontroladores como Arduino), el script está diseñado para ejecutarse nativamente en el Host utilizando `uv`.
+
+> [!IMPORTANT]
+> Antes de iniciar el worker, asegúrate de tener el backend en ejecución (mediante `./scripts/deploy.sh dev` o `./scripts/deploy.sh prod`) para que los endpoints de la API estén disponibles en `http://localhost:8000/api/v1`.
+
+##### Estrategia de Pruebas: Insumo de Imágenes vs Stream de Video
+En esta fase del proyecto y con el fin de facilitar las **pruebas manuales, de integración y testing local** sin depender de cámaras físicas de transmisión continua de video en vivo (como streams RTSP o webcams conectadas físicamente a los carriles), el procesamiento se realiza mediante la inspección periódica de archivos de imagen dentro del directorio `backend/input/`.
+
+La carpeta `backend/input/` cuenta con **3 subcarpetas clave**:
+
+1. **`backend/input/entrada/` (Carril de Ingreso):**
+   - Carpeta monitoreada para simular la llegada de vehículos al acceso del parqueadero.
+   - Al depositar una imagen (`.jpg`, `.jpeg`, `.png`), el worker la lee con OpenCV, aplica la detección del vehículo con YOLO (`SIGAP_model_small_v1.pt`) y extrae la matrícula mediante el lector OCR (`PlateReader`).
+   - Si la matrícula es reconocida, el worker envía automáticamente la petición `POST /api/v1/transactions/entry` con el payload `{"plate": "<placa>", "vehicle_type": "<tipo>"}`.
+   - Si el backend autoriza el ingreso (código HTTP 200 o 201), se confirma la entrada en el sistema (y se activa la talanquera física si hay un Arduino conectado).
+
+2. **`backend/input/salida/` (Carril de Salida):**
+   - Carpeta monitoreada para simular el egreso o retiro de vehículos del parqueadero.
+   - Al colocar una imagen en esta carpeta, el worker identifica la placa y realiza la petición `POST /api/v1/transactions/exit/{plate}` para verificar el estado de pago, liquidar el valor según el tiempo de permanencia y registrar la salida.
+
+3. **`backend/input/procesadas/` (Histórico de Procesamiento):**
+   - Carpeta de archivo y despacho automático. Inmediatamente después de analizar cada imagen depositada en `entrada/` o `salida/`, el worker la traslada a `procesadas/`.
+   - **Propósito:** Previene que el ciclo de monitoreo continuo vuelva a procesar la misma imagen indefinidamente. En caso de que un archivo no pueda ser interpretado como imagen válida, se renombra como `error_{archivo}` y se traslada aquí para fines de auditoría.
+
+> [!TIP]
+> **Imágenes de salida con detecciones:**
+> Adicionalmente a las subcarpetas de `input/`, el worker genera en `backend/output/` una copia de cada captura procesada con los recuadros delimitadores (*bounding boxes*) de la detección visual dibujados sobre la imagen original (`detected_{archivo}`).
+
+##### Ejecución automática con `deploy.sh`
+
+- **En Linux / WSL2:**
   ```bash
-  ./scripts/deploy.sh dev-watch
+  ./scripts/deploy.sh worker
   ```
 
-- **Modo Producción:** Despliegue optimizado en segundo plano (*detached*), con el frontend servido por Nginx en el puerto 80 enrutando solicitudes hacia la API:
+- **En Windows (Git Bash):**
   ```bash
-  ./scripts/deploy.sh prod
+  sh scripts/deploy.sh worker
   ```
 
-- **Comandos de Mantenimiento:**
-  - `./scripts/deploy.sh down`: Detiene y remueve los contenedores activos.
-  - `./scripts/deploy.sh logs`: Muestra el registro en tiempo real de los contenedores.
-  - `./scripts/deploy.sh clean`: Detiene el entorno y realiza una limpieza del sistema Docker.
+*Este comando realiza automáticamente:*
+1. La asignación de la variable de entorno `API_URL="http://localhost:8000/api/v1"`.
+2. El cambio al directorio `backend/`.
+3. La creación automática de las carpetas de trabajo (`backend/input/entrada`, `backend/input/salida` y `backend/input/procesadas`).
+4. La ejecución del script en el entorno virtual mediante `uv run python scripts/camera_worker.py`.
+
+##### Ejecución manual alternativa en el Host
+
+Si prefieres ejecutar el worker de forma directa en tu terminal sin usar `deploy.sh`:
+
+- **En Linux / WSL2 / Git Bash (Windows):**
+  ```bash
+  cd backend
+  export API_URL="http://localhost:8000/api/v1"
+  uv run python scripts/camera_worker.py
+  ```
+
+- **En Windows (PowerShell):**
+  ```powershell
+  cd backend
+  $env:API_URL="http://localhost:8000/api/v1"
+  uv run python scripts/camera_worker.py
+  ```
+
+- **En Windows (CMD):**
+  ```cmd
+  cd backend
+  set API_URL=http://localhost:8000/api/v1
+  uv run python scripts/camera_worker.py
+  ```
 
 ---
 
@@ -185,7 +277,13 @@ Con el backend en ejecución, puedes acceder a la documentación interactiva aut
 SIGAP/
 ├── backend/                       # Servicio backend y modelos de IA
 │   ├── core/                      # Configuración general, base de datos, seguridad y rate limiting
+│   ├── input/                     # Insumos de prueba para detección (reemplazo de stream de video)
+│   │   ├── entrada/               # Carril de ingreso (imágenes simuladas para registro de entrada)
+│   │   ├── salida/                # Carril de salida (imágenes simuladas para registro de salida)
+│   │   └── procesadas/            # Histórico de imágenes procesadas automáticamente
 │   ├── models/                    # Pesos y artefactos de modelos de visión
+│   ├── output/                    # Capturas resultantes con bounding boxes de detección
+│   ├── scripts/                   # Scripts auxiliares y workers (camera_worker.py)
 │   ├── src/
 │   │   ├── server/                # Aplicación FastAPI, routers (auth, usuarios) y ciclo de vida
 │   │   ├── processing/            # Pipelines y utilidades de procesamiento de video e imagen
