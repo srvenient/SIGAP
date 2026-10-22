@@ -20,3 +20,11 @@ async def process_exit(
         transaction_service: TransactionServiceDep
 ):
     return await transaction_service.register_exit(plate)
+
+@transaction_router.post("/process_payment/{plate}")
+async def process_payment(
+        plate: str,
+        transaction_service: TransactionServiceDep
+):
+    return await transaction_service.process_payment(plate, 1.0, "CASH", "CASH")
+

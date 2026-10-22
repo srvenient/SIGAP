@@ -4,7 +4,7 @@ import time
 
 import cv2
 import requests
-# import serial
+import serial
 from loguru import logger
 from ultralytics import YOLO
 
@@ -16,18 +16,18 @@ from src.inference.plate_reader import PlateReader
 
 API_URL = os.getenv("API_URL", "http://localhost:8000/api/v1")
 
-# # --- CONFIGURACIÓN ARDUINO ---
-# ARDUINO_PORT = os.getenv("ARDUINO_PORT", "COM3")
-# ARDUINO_BAUD = int(os.getenv("ARDUINO_BAUD", "9600"))
+# --- CONFIGURACIÓN ARDUINO ---
+ARDUINO_PORT = os.getenv("ARDUINO_PORT", "COM3")
+ARDUINO_BAUD = int(os.getenv("ARDUINO_BAUD", "9600"))
 #
-# try:
-#     logger.info(f"Conectando al Arduino en {ARDUINO_PORT}...")
-#     arduino = serial.Serial(ARDUINO_PORT, ARDUINO_BAUD, timeout=1)
-#     time.sleep(2) # Tiempo necesario para que el Arduino se reinicie al abrir el puerto
-#     logger.success("Conexión Serial establecida con el Arduino.")
-# except Exception as e:
-#     logger.error(f"No se pudo conectar al Arduino. Verifica el puerto y la conexión física. Error: {e}")
-#     arduino = None
+try:
+    logger.info(f"Conectando al Arduino en {ARDUINO_PORT}...")
+    arduino = serial.Serial(ARDUINO_PORT, ARDUINO_BAUD, timeout=1)
+    time.sleep(2) # Tiempo necesario para que el Arduino se reinicie al abrir el puerto
+    logger.success("Conexión Serial establecida con el Arduino.")
+except Exception as e:
+    logger.error(f"No se pudo conectar al Arduino. Verifica el puerto y la conexión física. Error: {e}")
+    arduino = None
 
 ENTRY_DIR = os.path.join(BASE_DIR, "input", "entrada")
 EXIT_DIR = os.path.join(BASE_DIR, "input", "salida")
@@ -39,17 +39,17 @@ MODEL_PATH = os.path.join(BASE_DIR, "models", "YOLO", "SIGAP_model_small_v1.pt")
 for directory in [ENTRY_DIR, EXIT_DIR, PROCESSED_DIR, OUTPUT_DIR]:
     os.makedirs(directory, exist_ok=True)
 
-# def open_gate(gate_type: str):
-#     if arduino and arduino.is_open:
-#         try:
-#             command = b'E' if gate_type == "entry" else b'S'
-#             arduino.write(command)
-#             logger.info(f"🔌 Señal '{command.decode()}' enviada al Arduino (Talanquera {gate_type.upper()}).")
-#         except Exception as e:
-#             logger.error(f"Error al enviar comando al Arduino: {e}")
-#             # Aquí podrías generar una alerta técnica para el Administrador según la HU-05[cite: 6]
-#     else:
-#         logger.warning("Arduino desconectado. No se puede abrir la talanquera físicamente.")
+def open_gate(gate_type: str):
+    if arduino and arduino.is_open:
+        try:
+            command = b'E' if gate_type == "entry" else b'S'
+            arduino.write(command)
+            logger.info(f"🔌 Señal '{command.decode()}' enviada al Arduino (Talanquera {gate_type.upper()}).")
+        except Exception as e:
+            logger.error(f"Error al enviar comando al Arduino: {e}")
+            # Aquí podrías generar una alerta técnica para el Administrador según la HU-05[cite: 6]
+    else:
+        logger.warning("Arduino desconectado. No se puede abrir la talanquera físicamente.")
 
 
 def send_to_backend_with_retry(gate_type: str, plate: str, vehicle_type: str, max_retries: int = 3):
@@ -71,6 +71,7 @@ def send_to_backend_with_retry(gate_type: str, plate: str, vehicle_type: str, ma
 
             if response.status_code in (200, 201):
                 logger.success(f"Backend autorizó {gate_type}: {response.json()}")
+                open_gate(gate_type)
                 # ¡BACKEND AUTORIZÓ! Procedemos a abrir la talanquera[cite: 6, 9]
                 # open_barrier(gate_type)
                 return True
@@ -120,11 +121,11 @@ def watch_directories(detection, plate_reader):
         try:
             for filename in os.listdir(ENTRY_DIR):
                 if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    process_image(os.path.join(ENTRY_DIR, filename), "entrada", filename, detection, plate_reader)
+                    process_image(os.path.join(ENTRY_DIR, filename), "entry", filename, detection, plate_reader)
 
             for filename in os.listdir(EXIT_DIR):
                 if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    process_image(os.path.join(EXIT_DIR, filename), "salida", filename, detection, plate_reader)
+                    process_image(os.path.join(EXIT_DIR, filename), "exit", filename, detection, plate_reader)
 
             time.sleep(1)
         except Exception as e:
@@ -143,6 +144,6 @@ if __name__ == "__main__":
     try:
         watch_directories(object_detection, ocr_reader)
     except KeyboardInterrupt:
-        # if arduino and arduino.is_open:
-        #     arduino.close()
+        if arduino and arduino.is_open:
+            arduino.close()
         sys.exit(0)
