@@ -92,7 +92,7 @@ case "$COMMAND" in
 
   *)
     echo "Error: Comando '$COMMAND' no reconocido."
-    echo "Uso correcto: sh deploy.sh {dev | dev-watch | prod | down | logs | clean}"
+    echo "Uso correcto: sh deploy.sh {dev | dev-watch | prod | worker | down | logs | clean}"
     exit 1
     ;;
 esac
