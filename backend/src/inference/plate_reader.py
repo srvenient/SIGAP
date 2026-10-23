@@ -1,26 +1,24 @@
 import re
 from dataclasses import dataclass
-
 import easyocr
 from loguru import logger
 
-from src.processing.text_cleaner import sanitize_text
+from src.processing.text_cleaner import sanitize_text, format_colombian_plate
 from src.server.transaction.domain.transaction import VehicleType
 
+# Patrones estrictos de 6 caracteres para Colombia
 CAR_PATTERN = re.compile(r"^[A-Z]{3}\d{3}$")
-MOTO_PATTERN = re.compile(r"^[A-Z]{3}\d{2}[A-Z]?$")
+MOTO_PATTERN = re.compile(r"^[A-Z]{3}\d{2}[A-Z]$")
 
 
 def identify_vehicle_type(formatted_plate: str) -> VehicleType:
     if not formatted_plate:
-        logger.info("Placa vacía o nula, no se puede identificar el tipo de vehículo.")
         return VehicleType.UNKNOWN
 
-    plate = formatted_plate.strip().upper()
+    plate = formatted_plate.replace("-", "").strip().upper()
 
     if CAR_PATTERN.match(plate):
         return VehicleType.CAR
-
     if MOTO_PATTERN.match(plate):
         return VehicleType.MOTORCYCLE
 
@@ -52,23 +50,23 @@ class PlateReader:
         if processed_image is None:
             return None
 
-        # 1. allowlist evita que lea símbolos raros o minúsculas
         results = self.reader.readtext(
             processed_image,
             allowlist=self.ALLOWLIST,
+            workers=0,
+            batch_size=1,
+            adjust_contrast=False,
+            paragraph=False
         )
 
         if not results:
             return None
 
-        # 2. Calcular la altura de cada caja detectada para ignorar "COLOMBIA", "YAMAHA" y el logo
-        # box tiene formato: [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]
         valid_detections = []
         max_height = 0
 
         for box, text, confidence in results:
             if confidence > 0.35:
-                # Altura de la caja actual
                 box_height = abs(box[2][1] - box[0][1])
                 if box_height > max_height:
                     max_height = box_height
@@ -77,22 +75,22 @@ class PlateReader:
         if not valid_detections:
             return None
 
-        # 3. Filtrar: Solo nos quedamos con las cajas que tengan al menos el 50% de la altura
-        # de la letra más grande (esto elimina "COLOMBIA", "YAMAHA" y logos pequeños)
-        main_chars = [
-            det for det in valid_detections
-            if det[3] >= (max_height * 0.50)
-        ]
-
-        # 4. Ordenar estrictamente de izquierda a derecha según la coordenada X inicial (box[0][0])
+        main_chars = [det for det in valid_detections if det[3] >= (max_height * 0.50)]
         main_chars.sort(key=lambda item: item[0][0][0])
-
         raw_text = "".join([item[1] for item in main_chars])
-        logger.debug(f"Texto crudo filtrado de EasyOCR: {raw_text}")
 
-        if not raw_text:
+        clean_text = sanitize_text(raw_text)
+
+        # Fast-Fail: Si tiene menos de 6 caracteres alfanuméricos, se descarta de inmediato
+        if len(clean_text) < 6:
             return None
 
-        license_plate = sanitize_text(raw_text)
+        formatted_plate = format_colombian_plate(clean_text)
+        final_plate = formatted_plate.replace("-", "")
+        vehicle_type = identify_vehicle_type(final_plate)
 
-        return PlateReaderResult(license_plate=license_plate, vehicle_type=identify_vehicle_type(license_plate))
+        if vehicle_type == VehicleType.UNKNOWN:
+            logger.debug(f"Lectura descartada por formato inválido: {final_plate}")
+            return None
+
+        return PlateReaderResult(license_plate=final_plate, vehicle_type=vehicle_type)

@@ -1,26 +1,13 @@
 import re
 
 CHAR_TO_NUM = {
-    'O': '0',
-    'Q': '0',
-    'D': '0',
-    'I': '1',
-    'L': '1',
-    'T': '1',
-    'Z': '2',
-    'S': '5',
-    'G': '6',
-    'B': '8',
-    'A': '4'
+    'O': '0', 'Q': '0', 'D': '0', 'I': '1',
+    'L': '1', 'T': '1', 'Z': '2', 'S': '5',
+    'G': '6', 'B': '8', 'A': '4'
 }
 NUM_TO_CHAR = {
-    '0': 'O',
-    '1': 'I',
-    '2': 'Z',
-    '5': 'S',
-    '8': 'B',
-    '6': 'G',
-    '4': 'A'
+    '0': 'O', '1': 'I', '2': 'Z', '5': 'S',
+    '8': 'B', '6': 'G', '4': 'A'
 }
 
 
@@ -29,44 +16,36 @@ def sanitize_text(text: str) -> str:
 
 
 def format_colombian_plate(text: str) -> str:
-    # If the text is already less than 5 characters, return it as is
-    if len(text) < 5:
+    if len(text) < 6:
         return text
 
-    # If there are 7 characters and the middle one (index 3) is noise from the shield between letters and numbers:
+    # Si hay 7 caracteres y el del medio (índice 3) es ruido del escudo entre letras y números:
     if len(text) == 7 and text[4:6].isdigit():
         text = text[:3] + text[4:]
 
-    # If still longer than 6 characters, find the best 6-character substring that resembles a Colombian plate
+    # Si sigue teniendo más de 6 caracteres, buscar la subcadena de 6 con mayor puntaje
     if len(text) > 6:
         best_candidate = text[:6]
         best_score = -1
         for i in range(len(text) - 5):
             cand = text[i:i + 6]
             score = (
-                    sum(1 for c in cand[:3] if c.isalpha()) +
-                    sum(1 for c in cand[3:5] if c.isdigit())
+                sum(1 for c in cand[:3] if c.isalpha()) +
+                sum(1 for c in cand[3:5] if c.isdigit())
             )
             if score > best_score:
                 best_score = score
                 best_candidate = cand
         text = best_candidate
 
-    # Now we have a candidate of 6 characters, we can apply the character-to-number and number-to-character corrections
-    letters = list(text[:3])
-    for i in range(len(letters)):
-        if letters[i] in NUM_TO_CHAR:
-            letters[i] = NUM_TO_CHAR[letters[i]]
+    # Las primeras 3 posiciones siempre son letras (Carros y Motos)
+    letters = [NUM_TO_CHAR.get(c, c) for c in text[:3]]
 
-    # Apply character-to-number corrections to the rest of the characters
-    rest = list(text[3:6])
-    for i in range(min(2, len(rest))):
-        if rest[i] in CHAR_TO_NUM:
-            rest[i] = CHAR_TO_NUM[rest[i]]
+    # Las posiciones 4 y 5 (índices 3 y 4) siempre son números (Carros y Motos)
+    mid_numbers = [CHAR_TO_NUM.get(c, c) for c in text[3:5]]
 
-    text = ''.join(letters) + ''.join(rest)
+    # La posición 6 (índice 5) puede ser número (Carro) o letra (Moto), se conserva según lectura
+    last_char = text[5]
 
-    if len(text) >= 5:
-        text = f"{text[:3]}-{text[3:]}"
-
-    return text
+    formatted = "".join(letters) + "".join(mid_numbers) + last_char
+    return f"{formatted[:3]}-{formatted[3:]}"
