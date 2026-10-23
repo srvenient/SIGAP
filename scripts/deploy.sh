@@ -52,7 +52,7 @@ case "$COMMAND" in
     mkdir -p input/entrada input/salida input/procesadas
 
     # Ejecutar el script usando uv dentro del contexto del backend
-    uv run python scripts/camera_worker.py
+    uv run --no-sync python scripts/camera_worker.py
     ;;
 
   dev)
