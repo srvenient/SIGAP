@@ -19,11 +19,9 @@ from src.inference.plate_reader import PlateReader
 
 API_URL = os.getenv("API_URL", "http://localhost:8000/api/v1")
 
-# --- CONFIGURACIÓN CÁMARAS (WINDOWS) ---
-CAM_ENTRY_INDEX = int(os.getenv("CAM_ENTRY_INDEX", "1"))
-CAM_EXIT_INDEX = int(os.getenv("CAM_EXIT_INDEX", "2"))
+CAM_ENTRY_INDEX = int(os.getenv("CAM_ENTRY_INDEX", "0"))
+CAM_EXIT_INDEX = int(os.getenv("CAM_EXIT_INDEX", "1"))
 
-# --- CONFIGURACIÓN ARDUINO ---
 ARDUINO_PORT = os.getenv("ARDUINO_PORT", "COM3")
 ARDUINO_BAUD = int(os.getenv("ARDUINO_BAUD", "9600"))
 
@@ -40,7 +38,6 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 MODEL_PATH = os.path.join(BASE_DIR, "models", "YOLO", "SIGAP_model_small_v1.pt")
 
-# --- VARIABLES DE ESTADO Y CONSENSO ---
 plate_buffer = {"entry": [], "exit": []}
 REQUIRED_READINGS = 3
 BUFFER_TIMEOUT = 2.0
@@ -51,7 +48,6 @@ last_seen_plates = {
     "exit": {"plate": None, "time": 0}
 }
 
-# Estado visual sincronizado con la respuesta del Backend para el operario
 gate_ui_banner = {
     "entry": {"text": "ESTADO: ESCANEANDO ENTRADA...", "color": (0, 255, 255), "until": 0},
     "exit": {"text": "ESTADO: ESCANEANDO SALIDA...", "color": (0, 255, 255), "until": 0}
@@ -94,14 +90,12 @@ def send_to_backend_with_retry(gate_type: str, plate: str, vehicle_type: str, ma
 
             response = requests.post(url=url, json=payload, headers=headers, timeout=5)
 
-            # 1. Éxito (200 OK en salida, 201 Created en entrada)
             if response.status_code in (200, 201):
                 logger.success(f"[{gate_type.upper()}] Backend autorizó {plate}: {response.json()}")
                 set_ui_banner(gate_type, f"AUTORIZADO: {plate} - ABRIENDO", (0, 255, 0), duration=6.0)
                 open_gate(gate_type)
                 return True
 
-            # 2. Errores controlados de negocio (No se deben reintentar)
             try:
                 error_detail = response.json().get("detail", "Operación no autorizada")
             except Exception:
@@ -277,7 +271,7 @@ def process_streams(detection, plate_reader):
     cam_entry = CameraReader(CAM_ENTRY_INDEX, "Entrada")
     cam_exit = CameraReader(CAM_EXIT_INDEX, "Salida")
 
-    TARGET_FPS = 5
+    TARGET_FPS = 30
     frame_delay = 1.0 / TARGET_FPS
 
     while True:

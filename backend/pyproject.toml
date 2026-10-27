@@ -17,6 +17,7 @@ dependencies = [
     "easyocr>=1.7.2",
     "requests>=2.34.2",
     "pyserial>=3.5",
+    "opencv-python>=4.10.0",
 ]
 
 [dependency-groups]
