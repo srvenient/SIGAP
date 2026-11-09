@@ -14,6 +14,8 @@ from src.server.auth.domain.exceptions import InvalidCredentials, AccountLocked,
     InvalidPassword, SamePassword, CannotModifySuperuser
 from src.server.auth.domain.user.user import User
 from src.server.auth.domain.user.user_repository import UserRepository
+from src.server.audit.application.audit_recorder import AuditRecorder
+from src.server.audit.domain.audit_log import Actor, AuditAction, AuditResult
 from src.server.shared.infrastructure.providers.system_clock import get_localized_now
 
 
@@ -25,9 +27,23 @@ class LoginResult:
 
 
 class AuthService:
-    def __init__(self, user_repository: UserRepository, refresh_token_repository: RefreshTokenRepository):
+    def __init__(
+            self,
+            user_repository: UserRepository,
+            refresh_token_repository: RefreshTokenRepository,
+            audit: AuditRecorder,
+    ):
         self.user_repository = user_repository
         self.refresh_token_repository = refresh_token_repository
+        self.audit = audit
+
+    def _audit_login(self, identifier: str, user: User | None, reason: str | None = None) -> None:
+        actor = Actor.of(user) if user else Actor(identifier[:80])
+        self.audit.record(
+            AuditAction.LOGIN, actor, "user", user.id if user else None, identifier[:120],
+            result=AuditResult.FAILURE if reason else AuditResult.SUCCESS,
+            detail={"motivo": reason} if reason else None,
+        )
 
     @staticmethod
     def _is_locked(user: User) -> bool:
@@ -107,21 +123,29 @@ class AuthService:
         password_ok = security.verify_password(password, hashed)
 
         if user is None:
+            self._audit_login(identifier, None, "usuario inexistente")
+            await self.audit.flush()
             raise InvalidCredentials
 
         # Cuenta bloqueada: no se evalúa la contraseña (si no, el atacante seguiría
         # recibiendo información durante el bloqueo)
         if self._is_locked(user):
+            self._audit_login(identifier, user, "cuenta bloqueada")
+            await self.audit.flush()
             raise AccountLocked(self._seconds_left(user))
 
         if not password_ok:
+            self._audit_login(identifier, user, "contraseña incorrecta")
             await self._register_failure(user)
             raise InvalidCredentials
 
         # Después de validar la contraseña: no revela qué cuentas están inactivas
         if not user.is_active:
+            self._audit_login(identifier, user, "cuenta desactivada")
+            await self.audit.flush()
             raise InactiveUser
 
+        self._audit_login(identifier, user)
         return await self._complete_login(user)
 
     async def get_user_from_token(self, access_token: str) -> User:
@@ -171,9 +195,15 @@ class AuthService:
             security.hash_refresh_token(raw_refresh_token)
         )
         if stored is not None:
+            user = await self.user_repository.find_by_id(stored.user_id)
+            if user is not None:
+                self.audit.record(AuditAction.LOGOUT, Actor.of(user), "user", user.id, user.username)
             await self.refresh_token_repository.revoke_family(stored.family_id)
 
     async def logout_all(self, user: User) -> None:
+        self.audit.record(
+            AuditAction.LOGOUT, Actor.of(user), "user", user.id, user.username, detail={"alcance": "todas"}
+        )
         await self.refresh_token_repository.revoke_all_for_user(user.id)
 
     async def change_password(

@@ -1,24 +1,16 @@
-from fastapi.testclient import TestClient
-
-from src.server.main import app
+from httpx import AsyncClient
 
 
-def test_health_check_returns_ok_status() -> None:
-    client = TestClient(app, base_url="http://localhost:8000")
-    response = client.get("/health-check")
+async def test_health_check_returns_ok_status(async_client: AsyncClient, test_engine) -> None:
+    response = await async_client.get("http://localhost:8000/health-check")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "database": "connected"}
 
 
-def test_openapi_spec_is_served() -> None:
-    client = TestClient(app, base_url="http://localhost:8000")
-    response = client.get("/api/v1/openapi.json")
+async def test_openapi_spec_is_served(async_client: AsyncClient) -> None:
+    response = await async_client.get("/openapi.json")
 
     assert response.status_code == 200
-
-    print(response.json())
-
-    assert sorted(response.json()["paths"]) == [
-        "/health-check",
-    ]
+    assert "/health-check" in response.json()["paths"]
+    assert "/api/v1/public/quote/{plate}" in response.json()["paths"]

@@ -25,6 +25,11 @@ else
     exit 1
 fi
 
+if [ -z "${DEVICE_API_KEY:-}" ]; then
+    echo "Error: falta DEVICE_API_KEY en el .env (ver .env.example)."
+    exit 1
+fi
+
 # 3. Detección automática de hardware (CPU vs CUDA)
 DEVICE_TYPE="cpu"
 if command -v nvidia-smi &> /dev/null; then
@@ -47,9 +52,6 @@ case "$COMMAND" in
 
     # Moverse al directorio backend donde está configurado uv y el .venv
     cd "$PROJECT_ROOT/backend"
-
-    # Crear carpetas de simulación si decides usarlas en lugar de 'examples/images'
-    mkdir -p input/entrada input/salida input/procesadas
 
     # Ejecutar el script usando uv dentro del contexto del backend
     uv run --no-sync python scripts/camera_worker.py

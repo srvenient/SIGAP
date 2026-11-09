@@ -11,6 +11,8 @@ from src.server.auth.domain.user.user import User, UserCreate, UserUpdate, Updat
 from src.server.auth.domain.user.user_repository import UserRepository
 from src.server.auth.domain.role.role_repository import RoleRepository
 from src.server.auth.domain.token.refresh_token_repository import RefreshTokenRepository
+from src.server.audit.application.audit_recorder import AuditRecorder
+from src.server.audit.domain.audit_log import Actor, AuditAction
 
 
 class UserService:
@@ -18,13 +20,15 @@ class UserService:
             self,
             user_repository: UserRepository,
             role_repository: RoleRepository,
-            refresh_token_repository: RefreshTokenRepository
+            refresh_token_repository: RefreshTokenRepository,
+            audit: AuditRecorder,
     ):
         self.user_repository = user_repository
         self.role_repository = role_repository
         self.refresh_token_repository = refresh_token_repository
+        self.audit = audit
 
-    async def create_user(self, user_create: UserCreate, must_change_password: bool = True) -> User:
+    async def create_user(self, actor: User, user_create: UserCreate, must_change_password: bool = True) -> User:
         if await self.user_repository.find_by_username(user_create.username):
             raise UsernameAlreadyExists
 
@@ -44,6 +48,10 @@ class UserService:
             must_change_password=must_change_password,
         )
 
+        self.audit.record(
+            AuditAction.USER_CREATED, Actor.of(actor), "user", user.id, user.username,
+            detail={"rol_id": str(user.role_id), "activo": user.is_active},
+        )
         return await self.user_repository.save(user)
 
     async def list_users(self, skip: int = 0, limit: int = 50) -> tuple[list[User], int]:
@@ -91,6 +99,14 @@ class UserService:
         if loses_admin and await self.user_repository.count_active_by_role(user.role_id) <= 1:  # type: ignore[arg-type]
             raise LastActiveAdmin
 
+        self.audit.record(
+            AuditAction.USER_UPDATED, Actor.of(actor), "user", user.id, user.username,
+            detail={
+                field: {"anterior": str(getattr(user, field)), "nuevo": str(value)}
+                for field, value in changes.items()
+                if getattr(user, field) != value
+            },
+        )
         updated = await self.user_repository.update(user_id, changes)
 
         if changes.get("is_active") is False:
@@ -114,15 +130,17 @@ class UserService:
         user.password_changed_at = get_localized_now()  # invalida los access tokens activos
         user.failed_login_attempts = 0
         user.locked_until = None
+        self.audit.record(AuditAction.USER_PASSWORD_RESET, Actor.of(actor), "user", user.id, user.username)
         await self.user_repository.save(user)
         await self.refresh_token_repository.revoke_all_for_user(user_id)  # y los refresh
         return temporary
 
-    async def unlock_user(self, user_id: UUID) -> None:
+    async def unlock_user(self, actor: User, user_id: UUID) -> None:
         user = await self.get_user(user_id)
         if user.username == settings.FIRST_SUPERUSER:
             raise CannotModifySuperuser
 
+        self.audit.record(AuditAction.USER_UNLOCKED, Actor.of(actor), "user", user.id, user.username)
         await self.user_repository.update(
             user_id, {"failed_login_attempts": 0, "locked_until": None}
         )

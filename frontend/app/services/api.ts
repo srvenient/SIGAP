@@ -74,7 +74,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}, retry = 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     const detail = Array.isArray(data.detail)
-      ? data.detail.map((d: { msg: string }) => d.msg).join(", ") // errores de validación 422
+      ? data.detail.map((d: { msg: string }) => d.msg.replace(/^Value error, /, "")).join(", ") // errores de validación 422
       : data.detail;
     throw new ApiError(res.status, detail || `Error del servidor (${res.status})`);
   }

@@ -10,6 +10,19 @@ services:
     volumes:
       - db_data_dev:/var/lib/postgresql/data
 
+  # Solo para pytest: se levanta con --profile test y no guarda datos entre ejecuciones
+  db_test:
+    image: postgres:16-alpine
+    profiles: [ test ]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: sigap
+      POSTGRES_DB: sigap_test_db
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+
   api:
     build:
       context: ./backend

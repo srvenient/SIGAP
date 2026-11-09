@@ -119,14 +119,14 @@ export function ChangeEmailModal({
         {/* Cabecera */}
         <div className="card-header shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#2a2a2a] border border-[#3e3e3e] flex items-center justify-center text-text-primary shrink-0">
-              <Mail className="w-4 h-4 text-primary-DEFAULT" />
+            <div className="w-8 h-8 rounded-lg bg-bg-accent border border-border-primary flex items-center justify-center text-text-primary shrink-0">
+              <Mail className="w-4 h-4 text-text-primary" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold font-special text-white">
+              <h2 className="text-sm sm:text-base font-medium font-special text-text-primary">
                 Cambiar correo electrónico
               </h2>
-              <p className="text-[11px] text-text-muted mt-0.5">
+              <p className="text-xs text-text-muted mt-0.5">
                 Asocia un correo para iniciar sesión o recuperar acceso
               </p>
             </div>
@@ -135,7 +135,7 @@ export function ChangeEmailModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-5 h-5 rounded-full bg-[#2f2f2f] hover:bg-[#3d3d3d] text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-5 h-5 rounded-full bg-bg-accent hover:bg-border-primary text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer"
             aria-label="Cerrar modal"
           >
             <X className="w-3.5 h-3.5" />
@@ -145,23 +145,23 @@ export function ChangeEmailModal({
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 text-xs">
           {serverError && (
-            <div className="p-3 rounded-lg bg-status-error-bg/30 border border-status-error/40 flex items-start gap-2 text-status-error">
+            <div className="p-3 rounded-lg bg-status-error-soft border border-status-error-border flex items-start gap-2 text-status-error">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <p className="leading-snug">{serverError}</p>
             </div>
           )}
 
           {/* Correo actual */}
-          <div className="p-3 rounded-lg bg-[#242424] border border-[#333333] flex items-center justify-between">
-            <span className="text-text-muted text-[11px]">Correo actual:</span>
-            <span className="font-mono text-text-primary text-[12px] truncate max-w-55">
+          <div className="p-3 rounded-lg bg-bg-accent border border-border-primary flex items-center justify-between">
+            <span className="text-text-muted text-xs">Correo actual:</span>
+            <span className="font-mono text-text-primary text-[13px] truncate max-w-55">
               {currentEmail || <span className="text-text-disabled italic">Sin registrar</span>}
             </span>
           </div>
 
           {/* Nuevo correo */}
           <div className="space-y-1.5">
-            <label htmlFor="new-email-input" className="block text-[11px] font-medium text-text-secondary">
+            <label htmlFor="new-email-input" className="block text-xs font-medium text-text-secondary">
               Nuevo correo electrónico
             </label>
             <div className="relative">
@@ -177,12 +177,12 @@ export function ChangeEmailModal({
                 placeholder="ej: usuario@empresa.com"
                 maxLength={120}
                 required
-                className={`w-full px-3 py-2 text-xs rounded-lg bg-[#1a1a1a] border text-white placeholder:text-text-disabled focus:outline-none transition-colors ${
+                className={`w-full px-3 py-2 text-xs rounded-lg bg-bg-app border text-text-primary placeholder:text-text-disabled focus:outline-none transition-colors ${
                   isTouched && !isValidEmail && trimmedNew.length > 0
                     ? "border-status-error focus:border-status-error"
                     : isTouched && isValidEmail
                     ? "border-status-success/60 focus:border-status-success"
-                    : "border-[#383838] focus:border-primary-DEFAULT"
+                    : "border-border-primary focus:border-text-primary"
                 }`}
               />
               {isTouched && isValidEmail && (
@@ -192,16 +192,16 @@ export function ChangeEmailModal({
               )}
             </div>
             {isTouched && trimmedNew.length > 0 && !isValidEmail && (
-              <p className="text-[10px] text-status-error">Formato de correo no válido.</p>
+              <p className="text-[11px] text-status-error">Formato de correo no válido.</p>
             )}
             {isTouched && currentEmail && trimmedNew === currentEmail.toLowerCase() && (
-              <p className="text-[10px] text-status-warning">El nuevo correo debe ser distinto al actual.</p>
+              <p className="text-[11px] text-status-warning">El nuevo correo debe ser distinto al actual.</p>
             )}
           </div>
 
           {/* Confirmar nuevo correo */}
           <div className="space-y-1.5">
-            <label htmlFor="confirm-email-input" className="block text-[11px] font-medium text-text-secondary">
+            <label htmlFor="confirm-email-input" className="block text-xs font-medium text-text-secondary">
               Confirmar nuevo correo
             </label>
             <div className="relative">
@@ -217,12 +217,12 @@ export function ChangeEmailModal({
                 placeholder="Repite el nuevo correo"
                 maxLength={120}
                 required
-                className={`w-full px-3 py-2 text-xs rounded-lg bg-[#1a1a1a] border text-white placeholder:text-text-disabled focus:outline-none transition-colors ${
+                className={`w-full px-3 py-2 text-xs rounded-lg bg-bg-app border text-text-primary placeholder:text-text-disabled focus:outline-none transition-colors ${
                   emailsDoNotMatch
                     ? "border-status-error focus:border-status-error"
                     : emailsMatch
                     ? "border-status-success/60 focus:border-status-success"
-                    : "border-[#383838] focus:border-primary-DEFAULT"
+                    : "border-border-primary focus:border-text-primary"
                 }`}
               />
               {emailsMatch && (
@@ -232,21 +232,21 @@ export function ChangeEmailModal({
               )}
             </div>
             {emailsDoNotMatch && (
-              <p className="text-[10px] text-status-error">Los correos no coinciden.</p>
+              <p className="text-[11px] text-status-error">Los correos no coinciden.</p>
             )}
           </div>
 
-          <div className="p-2.5 rounded-lg bg-[#1e1e1e] border border-[#2e2e2e] text-[11px] text-text-muted leading-relaxed">
+          <div className="p-2.5 rounded-lg bg-bg-app border border-border-primary text-xs text-text-muted leading-relaxed">
             Podrás iniciar sesión usando tu nombre de usuario (<span className="text-text-primary font-mono font-medium">@{user?.username}</span>) o este nuevo correo.
           </div>
 
           {/* Botones de acción */}
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#2d2d2d]">
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-border-primary">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-3.5 py-1.5 rounded-lg bg-transparent hover:bg-white/5 text-text-secondary hover:text-white transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-transparent hover:bg-bg-accent text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
             >
               Cancelar
             </button>

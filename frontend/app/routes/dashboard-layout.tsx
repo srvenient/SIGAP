@@ -1,16 +1,25 @@
-import React, { useState, useEffect } from "react";
-import { Outlet, useNavigate, useLocation } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router";
+import { ShieldAlert } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Sidebar } from "../components/layout/Sidebar";
 import { Topbar } from "../components/layout/Topbar";
 import { ProfileModal } from "../components/profile/ProfileModal";
+import { canVisit } from "../lib/access";
+import { PAGES } from "../lib/pages";
 
-const ADMIN_EXCLUSIVE_ROUTES = [
-  "/dashboard/tariffs",
-  "/dashboard/users",
-  "/dashboard/transactions",
-  "/dashboard/audit",
-];
+function AccessDenied() {
+  return (
+    <div className="max-w-sm mx-auto mt-16 text-center">
+      <ShieldAlert className="w-8 h-8 mx-auto text-text-muted" />
+      <h1 className="mt-4 text-lg font-semibold">No tienes acceso a esta sección</h1>
+      <p className="mt-1.5 text-sm text-text-secondary">Tu rol no incluye esta función. Si la necesitas, pídesela al administrador.</p>
+      <Link to="/dashboard" className="btn-primary mt-5">
+        Volver al panel
+      </Link>
+    </div>
+  );
+}
 
 export default function DashboardLayout() {
   const { user, isAuthenticated, isLoading, role } = useAuth();
@@ -48,29 +57,10 @@ export default function DashboardLayout() {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  useEffect(() => {
-    if (isLoading || !isAuthenticated || !role) return;
-
-    const path = location.pathname;
-
-    if (role === "operator" && (ADMIN_EXCLUSIVE_ROUTES.includes(path) || path.includes("/support-tickets"))) {
-      navigate("/unauthorized", { replace: true });
-    }
-
-    if (role === "support" && (ADMIN_EXCLUSIVE_ROUTES.includes(path) || path.includes("/manual-entry"))) {
-      navigate("/unauthorized", { replace: true });
-    }
-  }, [role, location.pathname, isAuthenticated, isLoading, navigate]);
-
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-bg-app">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-2 border-primary-DEFAULT/30 border-t-primary-DEFAULT rounded-full animate-spin" />
-          <p className="text-xs font-mono text-text-muted font-medium tracking-wide">
-            CARGANDO ENTORNO SIGAP...
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-7 h-7 border-2 border-border-strong border-t-steel rounded-full animate-spin" role="status" aria-label="Cargando" />
       </div>
     );
   }
@@ -79,8 +69,11 @@ export default function DashboardLayout() {
     return null;
   }
 
+  const allowed = canVisit(location.pathname, role);
+  const page = PAGES[location.pathname];
+
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-bg-app selection:bg-primary-muted selection:text-text-primary">
+    <div className="min-h-screen flex flex-col">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -89,24 +82,23 @@ export default function DashboardLayout() {
         onOpenProfile={() => setIsProfileOpen(true)}
       />
 
-      <div className={`
-        ${isCollapsed ? "lg:pl-17" : "lg:pl-64"} 
-        flex flex-col min-h-screen relative z-10 
-        transition-all duration-300 ease-in-out`
-      }>
-        <Topbar
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          onOpenProfile={() => setIsProfileOpen(true)}
-        />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full -mt-5.5">
-          <Outlet />
+      <div className={`${isCollapsed ? "lg:pl-15" : "lg:pl-64"} flex flex-col min-h-screen transition-[padding] duration-200`}>
+        <Topbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} onOpenProfile={() => setIsProfileOpen(true)} />
+
+        <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
+          <div className="max-w-360 mx-auto">
+            {allowed && page && (
+              <header className="mb-5">
+                <h1 className="text-xl font-semibold tracking-tight">{page.title}</h1>
+                <p className="mt-0.5 text-sm text-text-muted">{page.description}</p>
+              </header>
+            )}
+            {allowed ? <Outlet /> : <AccessDenied />}
+          </div>
         </main>
       </div>
 
-      <ProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-      />
+      <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </div>
   );
 }

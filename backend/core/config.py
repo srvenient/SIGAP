@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Literal, Any, Annotated
 
-from pydantic import PostgresDsn, computed_field, BeforeValidator, AnyUrl
+from pydantic import PostgresDsn, computed_field, BeforeValidator, AnyUrl, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -68,8 +68,20 @@ class Settings(BaseSettings):
     FAILED_LOGIN_ATTEMPTS: int = 5
     LOCKOUT_DURATION_MINUTES: int = 15  # minutes
 
+    PUBLIC_RATE_LIMIT: str = "120/minute"
+    PUBLIC_QUOTE_RATE_LIMIT: str = "30/minute"
+
     FIRST_SUPERUSER: str
     FIRST_SUPERUSER_PASSWORD: str
+
+    # Worker de cámaras: sin esta clave la API no arranca (no hay valor por defecto a propósito)
+    DEVICE_API_KEY: str = Field(min_length=16)
+    DEVICE_OFFLINE_SECONDS: int = 20
+    GATE_COMMAND_TTL_SECONDS: int = 60
+
+    # Pasarela de pago. Para conectar una real se agrega su adaptador en payment/infrastructure.
+    PAYMENT_GATEWAY: Literal["simulated"] = "simulated"
+    PAYMENT_TIMEOUT_SECONDS: int = 180
 
     # Database settings
     POSTGRES_USER: str

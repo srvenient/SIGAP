@@ -11,15 +11,15 @@ interface ModalProps {
   footer?: React.ReactNode;
 }
 
-export function Modal({
-  isOpen,
-  onClose,
-  title,
-  subtitle,
-  children,
-  maxWidth = "lg",
-  footer,
-}: ModalProps) {
+const WIDTHS = {
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+  "2xl": "max-w-2xl",
+};
+
+export function Modal({ isOpen, onClose, title, subtitle, children, maxWidth = "lg", footer }: ModalProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -36,47 +36,33 @@ export function Modal({
 
   if (!isOpen) return null;
 
-  const maxWidthStyles = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
-    "2xl": "max-w-2xl",
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/65 backdrop-blur-xs" onClick={onClose} />
 
-      {/* Modal Dialog */}
       <div
-        className={`relative w-full ${maxWidthStyles[maxWidth]} bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl z-10 overflow-hidden transform transition-all animate-in zoom-in-95 duration-200`}
+        role="dialog"
+        aria-modal="true"
+        className={`relative w-full ${WIDTHS[maxWidth]} bg-bg-surface-elevated border border-border-strong rounded-lg shadow-2xl shadow-black/50 z-10 overflow-hidden`}
       >
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-border-primary flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-lg font-semibold text-white tracking-tight">{title}</h3>
-            {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+            <h3 className="text-base font-semibold text-text-primary">{title}</h3>
+            {subtitle && <p className="text-xs text-text-muted mt-0.5">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
-            aria-label="Cerrar modal"
+            className="text-text-muted hover:text-text-primary p-1 rounded hover:bg-bg-accent transition-colors cursor-pointer"
+            aria-label="Cerrar"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 max-h-[75vh] overflow-y-auto">{children}</div>
+        <div className="p-5 max-h-[75vh] overflow-y-auto">{children}</div>
 
-        {/* Footer */}
         {footer && (
-          <div className="px-6 py-4 bg-slate-950/50 border-t border-slate-800 flex items-center justify-end gap-3">
+          <div className="px-5 py-3 border-t border-border-primary flex items-center justify-end gap-2">
             {footer}
           </div>
         )}

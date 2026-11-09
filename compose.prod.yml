@@ -22,6 +22,11 @@ services:
         DEVICE_TYPE: ${DEVICE_TYPE}
     restart: always
     env_file: .env
+    environment:
+      # Confía en el X-Forwarded-For de Nginx; la API no se publica fuera del host
+      FORWARDED_ALLOW_IPS: "*"
+    ports:
+      - "127.0.0.1:8000:8000" # Solo para el worker de cámaras que corre en este equipo
     depends_on:
       db:
         condition: service_healthy # Espera a que PostgreSQL inicie para arrancar FastAPI

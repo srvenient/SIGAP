@@ -13,6 +13,8 @@ from src.server.auth.infrastructure.postgres_refresh_token_repository import Pos
 from src.server.auth.infrastructure.postgres_role_repository import PostgresRoleRepository
 from src.server.auth.infrastructure.postgres_user_repository import PostgresUserRepository
 from src.server.shared.api.deps import SessionDep
+from src.server.audit.application.audit_recorder import AuditRecorder
+from src.server.wiring import build_audit_recorder
 
 
 def get_role_repository(session: SessionDep) -> RoleRepository:
@@ -32,23 +34,37 @@ UserRepositoryDep = Annotated[UserRepository, Depends(get_user_repository)]
 RefreshTokenRepositoryDep = Annotated[RefreshTokenRepository, Depends(get_refresh_token_repository)]
 
 
+def get_audit_recorder(session: SessionDep) -> AuditRecorder:
+    return build_audit_recorder(session)
+
+
+AuditRecorderDep = Annotated[AuditRecorder, Depends(get_audit_recorder)]
+
+
 def get_user_service(
         user_repository: UserRepositoryDep,
         role_repository: RoleRepositoryDep,
-        refresh_token_repository: RefreshTokenRepositoryDep
+        refresh_token_repository: RefreshTokenRepositoryDep,
+        audit: AuditRecorderDep,
 ) -> UserService:
     return UserService(
         user_repository=user_repository,
         role_repository=role_repository,
-        refresh_token_repository=refresh_token_repository
+        refresh_token_repository=refresh_token_repository,
+        audit=audit,
     )
 
 
 def get_auth_service(
         user_repository: UserRepositoryDep,
-        refresh_token_repository: RefreshTokenRepositoryDep
+        refresh_token_repository: RefreshTokenRepositoryDep,
+        audit: AuditRecorderDep,
 ) -> AuthService:
-    return AuthService(user_repository=user_repository, refresh_token_repository=refresh_token_repository)
+    return AuthService(
+        user_repository=user_repository,
+        refresh_token_repository=refresh_token_repository,
+        audit=audit,
+    )
 
 
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
@@ -90,3 +106,8 @@ def require_roles(*allowed: RoleName):
 
 
 AdminUserDep = Annotated[User, Depends(require_roles(RoleName.ADMIN))]
+OperatorUserDep = Annotated[User, Depends(require_roles(RoleName.OPERATOR))]
+SupportUserDep = Annotated[User, Depends(require_roles(RoleName.SUPPORT))]
+OperatorOrAdminDep = Annotated[User, Depends(require_roles(RoleName.ADMIN, RoleName.OPERATOR))]
+SupportOrAdminDep = Annotated[User, Depends(require_roles(RoleName.ADMIN, RoleName.SUPPORT))]
+OperatorOrSupportDep = Annotated[User, Depends(require_roles(RoleName.OPERATOR, RoleName.SUPPORT))]

@@ -17,8 +17,15 @@ if TYPE_CHECKING:
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
+def require_strong_password(value: str) -> str:
+    """Política de HU-15: la longitud la valida el campo; aquí la complejidad."""
+    if not (re.search(r"[a-z]", value) and re.search(r"[A-Z]", value) and re.search(r"\d", value)):
+        raise ValueError("La contraseña debe incluir mayúscula, minúscula y número")
+    return value
+
+
 class UserBase(SQLModel):
-    username: str = Field(min_length=3, max_length=20, nullable=False)
+    username: str = Field(min_length=3, max_length=20, nullable=False, unique=True, index=True)
 
     full_name: Optional[str] = Field(default=None, max_length=80)
     email: Optional[str] = Field(default=None, max_length=120)
@@ -30,6 +37,11 @@ class UserCreate(UserBase):
     role_id: UUID
 
     password: str = Field(min_length=8, max_length=40)
+
+    @field_validator("password")
+    @classmethod
+    def _password_policy(cls, value: str) -> str:
+        return require_strong_password(value)
 
     @field_validator("username")
     @classmethod
@@ -89,6 +101,11 @@ class UpdateProfile(SQLModel):
 class UpdatePassword(SQLModel):
     current_password: str = Field(min_length=8, max_length=40)
     new_password: str = Field(min_length=8, max_length=40)
+
+    @field_validator("new_password")
+    @classmethod
+    def _password_policy(cls, value: str) -> str:
+        return require_strong_password(value)
 
 
 class User(UserBase, table=True):

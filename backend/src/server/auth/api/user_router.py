@@ -34,8 +34,8 @@ async def list_users(
 
 
 @user_router.post("", response_model=UserPublic, status_code=status.HTTP_201_CREATED)
-async def create_user(body: UserCreate, _: AdminUserDep, user_service: UserServiceDep):
-    return await user_service.create_user(body)
+async def create_user(body: UserCreate, admin: AdminUserDep, user_service: UserServiceDep):
+    return await user_service.create_user(admin, body)
 
 
 @user_router.get("/{user_id}", response_model=UserPublic)
@@ -56,5 +56,5 @@ async def reset_password(user_id: UUID, admin: AdminUserDep, user_service: UserS
 
 
 @user_router.post("/{user_id}/unlock", status_code=status.HTTP_204_NO_CONTENT)
-async def unlock_user(user_id: UUID, _: AdminUserDep, user_service: UserServiceDep):
-    await user_service.unlock_user(user_id)
+async def unlock_user(user_id: UUID, admin: AdminUserDep, user_service: UserServiceDep):
+    await user_service.unlock_user(admin, user_id)

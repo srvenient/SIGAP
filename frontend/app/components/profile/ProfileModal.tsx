@@ -19,7 +19,6 @@ import { useToast } from "../../context/ToastContext";
 import { authService } from "../../services/authService";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 import { ChangeEmailModal } from "./ChangeEmailModal";
-import avatar1 from "../../assets/png/avatar9.png";
 
 export interface ProfileModalProps {
   isOpen: boolean;
@@ -147,7 +146,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       case "admin":
         return "Administrador General";
       case "operator":
-        return "Operador de Patio";
+        return "Operador";
       case "support":
         return "Soporte Técnico Especializado";
       default:
@@ -180,16 +179,16 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         }}
       >
         <div
-          className="card bg-bg-accent/60 w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+          className="card bg-bg-surface-elevated! border-border-strong! w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Encabezado del modal */}
           <div className="card-header shrink-0">
             <div>
-              <h2 className="text-base sm:text-xl font-bold font-special">
+              <h2 className="text-base font-semibold">
                 {isEnforced ? "Actualización de Seguridad Requerida" : "Cuenta"}
               </h2>
-              <p className="text-xs sm:text-sm mt-0.5">
+              <p className="text-xs text-text-muted mt-0.5">
                 {isEnforced
                   ? "Debes establecer una nueva contraseña personal para continuar."
                   : "Gestiona tu perfil, tus datos de inicio de sesión y tus dispositivos."}
@@ -201,7 +200,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               <button
                 type="button"
                 onClick={handleLogoutFromModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-status-error hover:bg-status-error-bg/20 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-status-error hover:bg-status-error-soft/20 transition-colors cursor-pointer"
                 title="Salir de la sesión"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -211,7 +210,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               <button
                 type="button"
                 onClick={onClose}
-                className="w-5 h-5 rounded-full bg-[#2f2f2f] hover:bg-[#3d3d3d] text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                className="w-5 h-5 rounded-full bg-bg-accent hover:bg-border-primary text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Cerrar modal"
               >
                 <X className="w-3.5 h-3.5" />
@@ -221,10 +220,10 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
           {/* Banner de cambio obligatorio si aplica */}
           {isEnforced && (
-            <div className="mx-6 mt-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-200 shrink-0">
-              <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="mx-6 mt-4 p-3.5 rounded-xl bg-status-warning-soft border border-status-warning-border flex items-start gap-3 text-text-secondary shrink-0">
+              <AlertTriangle className="w-5 h-5 text-status-warning shrink-0 mt-0.5" />
               <div className="text-xs">
-                <p className="font-semibold text-amber-300">Cambio de contraseña obligatorio</p>
+                <p className="font-semibold text-status-warning">Cambio de contraseña obligatorio</p>
                 <p className="opacity-90 mt-0.5 leading-relaxed">
                   Por políticas de seguridad del sistema SIGAP (primer acceso o contraseña restablecida),
                   es obligatorio configurar una nueva contraseña personal para desbloquear el acceso operacional.
@@ -236,19 +235,14 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           {/* Cuerpo desplazable */}
           <div className="overflow-y-auto px-6 py-4 space-y-4">
             {/* 1. Datos Generales de la Cuenta */}
-            <div className="flex flex-col justify-center gap-4 divide-y divide-[#2d2d2d]">
+            <div className="flex flex-col justify-center gap-4 divide-y divide-border-secondary">
               <div className="flex items-center gap-2 pb-3">
-                <h4 className="font-special font-semibold text-white">Perfil</h4>
+                <h4 className="font-special font-semibold text-text-primary">Perfil</h4>
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="relative w-15 h-15 rounded-full flex items-center justify-center shrink-0 shadow-md mt-1">
-                  <img
-                    src={avatar1}
-                    alt="Avatar"
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                  <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-status-success ring-2 ring-[#202020]" />
+                <div className="w-14 h-14 rounded-full bg-bg-accent border border-border-strong flex items-center justify-center text-base font-medium uppercase shrink-0 mt-1">
+                  {(user?.fullName || user?.username || "?").slice(0, 2)}
                 </div>
 
                 <div className="min-w-0 flex-1 space-y-2">
@@ -256,11 +250,11 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                     <span className="font-mono text-xs font-semibold text-text-primary">
                       @{user?.username || "admin"}
                     </span>
-                    <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-primary-muted text-primary-DEFAULT border border-primary-DEFAULT/30">
+                    <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-primary-muted text-text-primary border border-border-strong">
                       {getRoleDisplayName(role)}
                     </span>
                     {isSuperuser && (
-                      <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                      <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-status-warning-soft text-status-warning border border-status-warning flex items-center gap-1">
                         <ShieldCheck className="w-3 h-3" />
                         Superuser
                       </span>
@@ -268,7 +262,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   </div>
 
                   <div>
-                    <label htmlFor="profile-fullname-input" className="block text-[13px] font-medium">
+                    <label htmlFor="profile-fullname-input" className="block text-sm font-medium">
                       Nombre
                     </label>
                     {isSuperuser ? (
@@ -278,15 +272,15 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                           type="text"
                           readOnly
                           value={user?.fullName || "Administrador del Sistema"}
-                          className="w-full px-3 py-1.5 text-xs rounded-lg bg-[#1a1a1a] border border-[#303030] text-text-muted cursor-not-allowed font-sans select-none"
+                          className="w-full px-3 py-1.5 text-xs rounded-lg bg-bg-app border border-border-primary text-text-muted cursor-not-allowed font-sans select-none"
                           title="Protegido por configuración .env"
                         />
                         <div
-                          className="px-2.5 py-1.5 rounded-lg bg-neutral-800/80 border border-neutral-700/60 text-[11px] text-text-muted flex items-center gap-1 shrink-0"
+                          className="px-2.5 py-1.5 rounded-lg bg-neutral-800/80 border border-neutral-700/60 text-xs text-text-muted flex items-center gap-1 shrink-0"
                           title="No modificable para el superusuario"
                         >
-                          <Lock className="w-3 h-3 text-amber-400" />
-                          <span className="font-mono">Protegido</span>
+                          <Lock className="w-3 h-3 text-status-warning" />
+                          <span>Protegido</span>
                         </div>
                       </div>
                     ) : (
@@ -308,7 +302,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                             }}
                             placeholder="ej: Mario Gómez"
                             maxLength={80}
-                            className="w-full px-3 py-1.5 text-xs rounded-lg bg-[#1a1a1a] border border-[#383838] focus:border-primary-DEFAULT text-white placeholder:text-text-disabled focus:outline-none transition-colors"
+                            className="w-full px-3 py-1.5 text-xs rounded-lg bg-bg-app border border-border-primary focus:border-text-primary text-text-primary placeholder:text-text-disabled focus:outline-none transition-colors"
                           />
                         </div>
                         <button
@@ -326,7 +320,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                         </button>
                       </div>
                     )}
-                    <p className="text-[10px] text-text-muted mt-1">
+                    <p className="text-[11px] text-text-muted mt-1">
                       Nombre con el que te identificas dentro del sistema SIGAP.
                     </p>
                   </div>
@@ -337,27 +331,27 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             {/* 2. Sección Seguridad de la cuenta */}
             <div className="pt-6 space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-border-primary">
-                <h4 className="font-special font-semibold text-white">Seguridad de la cuenta</h4>
+                <h4 className="font-special font-semibold text-text-primary">Seguridad de la cuenta</h4>
               </div>
 
               {/* Correo electrónico */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 ">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-[13px] font-medium text-white">Correo electrónico</p>
+                    <p className="text-sm font-medium text-text-primary">Correo electrónico</p>
                     {isSuperuser ? (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-status-warning-soft text-status-warning border border-status-warning">
                         Protegido
                       </span>
                     ) : (
                       user?.email && (
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-status-success/20 text-status-success border border-status-success/30">
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-status-success/20 text-status-success border border-status-success/30">
                           Asociado
                         </span>
                       )
                     )}
                   </div>
-                  <p className="text-[12px] text-text-muted mt-0.5 font-mono">
+                  <p className="text-[13px] text-text-muted mt-0.5">
                     {user?.email || <span className="text-text-disabled italic font-sans">Sin correo registrado</span>}
                   </p>
                 </div>
@@ -367,14 +361,14 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                     className="px-3 py-1.5 rounded-lg bg-neutral-800/80 border border-neutral-700/60 text-xs text-text-muted flex items-center gap-1.5 shrink-0"
                     title="Esta cuenta solo puede gestionarse mediante el archivo .env"
                   >
-                    <Lock className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="font-mono">Protegido</span>
+                    <Lock className="w-3.5 h-3.5 text-status-warning" />
+                    <span>Protegido</span>
                   </div>
                 ) : (
                   <button
                     type="button"
                     onClick={() => setIsEmailModalOpen(true)}
-                    className="px-3.5 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333333] border border-[#3e3e3e] text-xs font-medium text-white transition-colors cursor-pointer shrink-0"
+                    className="px-3.5 py-1.5 rounded-lg bg-bg-accent hover:bg-border-primary border border-border-primary text-xs font-medium text-text-primary transition-colors cursor-pointer shrink-0"
                   >
                     {user?.email ? "Cambiar correo" : "Asociar correo"}
                   </button>
@@ -385,18 +379,18 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-[13px] font-medium text-white">Contraseña</p>
+                    <p className="text-sm font-medium text-text-primary">Contraseña</p>
                     {isSuperuser ? (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-status-warning-soft text-status-warning border border-status-warning">
                         Definida en .env
                       </span>
                     ) : isEnforced && (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-status-warning-soft text-status-warning border border-status-warning">
                         Requerido
                       </span>
                     )}
                   </div>
-                  <p className="text-[12px] text-text-muted mt-0.5">
+                  <p className="text-[13px] text-text-muted mt-0.5">
                     {isSuperuser
                       ? "La cuenta superusuario está protegida y sus credenciales se administran desde el archivo .env."
                       : "Establece una contraseña para tu cuenta"}
@@ -408,14 +402,14 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                     className="px-3 py-1.5 rounded-lg bg-neutral-800/80 border border-neutral-700/60 text-xs text-text-muted flex items-center gap-1.5 shrink-0"
                     title="Esta cuenta solo puede gestionarse mediante el archivo .env"
                   >
-                    <Lock className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="font-mono">Protegida</span>
+                    <Lock className="w-3.5 h-3.5 text-status-warning" />
+                    <span>Protegida</span>
                   </div>
                 ) : (
                   <button
                     type="button"
                     onClick={() => setIsPasswordModalOpen(true)}
-                    className="px-3.5 py-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#333333] border border-[#3e3e3e] text-xs font-medium text-white transition-colors cursor-pointer shrink-0"
+                    className="px-3.5 py-1.5 rounded-lg bg-bg-accent hover:bg-border-primary border border-border-primary text-xs font-medium text-text-primary transition-colors cursor-pointer shrink-0"
                   >
                     Cambiar contraseña
                   </button>
@@ -424,13 +418,13 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             </div>
 
             {/* 5. Sección ID de usuario */}
-            <div className="pt-6 divide-y divide-[#2d2d2d]">
+            <div className="pt-6 divide-y divide-border-secondary">
               <div className="flex items-center gap-2 pb-3">
-                <h4 className="font-special font-semibold text-white">ID de usuario</h4>
+                <h4 className="font-special font-semibold text-text-primary">ID de usuario</h4>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-2">
-                <h4 className="text-[13px] text-text-secondary">ID de usuario</h4>
+                <h4 className="text-sm text-text-secondary">ID de usuario</h4>
 
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg shrink-0">
                   <span className="font-mono text-xs text-text-secondary select-all">
@@ -439,7 +433,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   <button
                     type="button"
                     onClick={handleCopyUserId}
-                    className="p-1 rounded text-text-muted hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                    className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-accent transition-colors cursor-pointer"
                     title="Copiar ID de usuario"
                   >
                     {hasCopiedId ? (

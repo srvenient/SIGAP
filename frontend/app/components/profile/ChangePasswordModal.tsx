@@ -76,7 +76,7 @@ export function ChangePasswordModal({
   const hasMinLength = newPassword.length >= 8;
   const hasLetter = /[a-zA-Z]/.test(newPassword);
   const hasNumber = /[0-9]/.test(newPassword);
-  const hasLettersAndNumbers = hasLetter && hasNumber;
+  const hasLettersAndNumbers = /[a-z]/.test(newPassword) && /[A-Z]/.test(newPassword) && hasNumber;
   const isDifferentFromCurrent = !currentPassword || !newPassword || newPassword !== currentPassword;
   const passwordsMatch = confirmPassword.length > 0 && newPassword === confirmPassword;
   const passwordsDoNotMatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
@@ -99,9 +99,9 @@ export function ChangePasswordModal({
   })();
 
   const strengthColor = (() => {
-    if (strengthScore <= 1) return "text-rose-400";
-    if (strengthScore === 2) return "text-amber-400";
-    return "text-emerald-400";
+    if (strengthScore <= 1) return "text-status-error";
+    if (strengthScore === 2) return "text-status-warning";
+    return "text-status-success";
   })();
 
   const isFormValid =
@@ -136,9 +136,9 @@ export function ChangePasswordModal({
     }
 
     if (!hasLettersAndNumbers) {
-      setServerError("La contraseña debe incluir letras y números");
+      setServerError("La contraseña debe incluir mayúscula, minúscula y número");
       toast(
-        "La contraseña debe contener al menos una letra y un número",
+        "La contraseña debe incluir mayúscula, minúscula y número",
         "error",
         "Requisito de seguridad"
       );
@@ -200,7 +200,7 @@ export function ChangePasswordModal({
       }}
     >
       <div
-        className="bg-[#1c1c1c] border border-[#333333] rounded-2xl p-6 sm:p-7 max-w-sm w-full shadow-2xl relative flex flex-col items-center animate-in zoom-in-95 duration-150 select-none sm:select-auto"
+        className="bg-bg-app border border-border-primary rounded-2xl p-6 sm:p-7 max-w-sm w-full shadow-2xl relative flex flex-col items-center animate-in zoom-in-95 duration-150 select-none sm:select-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Botón cerrar X circular estilo Notion (o salir si es obligatorio) */}
@@ -208,7 +208,7 @@ export function ChangePasswordModal({
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-3.5 right-3.5 w-5 h-5 rounded-full bg-[#2f2f2f] hover:bg-[#3d3d3d] text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="absolute top-3.5 right-3.5 w-5 h-5 rounded-full bg-bg-accent hover:bg-border-primary text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer"
             aria-label="Cerrar"
           >
             <X className="w-3.5 h-3.5" />
@@ -217,7 +217,7 @@ export function ChangePasswordModal({
           <button
             type="button"
             onClick={handleLogout}
-            className="absolute top-3.5 right-3.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-status-error hover:bg-status-error-bg/20 transition-colors cursor-pointer flex items-center gap-1"
+            className="absolute top-3.5 right-3.5 px-2.5 py-1 rounded-md text-xs font-medium text-status-error hover:bg-status-error-soft/20 transition-colors cursor-pointer flex items-center gap-1"
             title="Cerrar sesión"
           >
             <LogOut className="w-3 h-3" />
@@ -226,17 +226,17 @@ export function ChangePasswordModal({
         )}
 
         {/* Ícono de contraseña con puntos de entrada estilo Notion de la foto */}
-        <div className="flex justify-center text-white">
+        <div className="flex justify-center text-text-primary">
           <RectangleEllipsis className="w-10 h-10" />
         </div>
 
         {/* Título idéntico a la imagen de referencia */}
-        <h3 className="text-base sm:text-lg font-bold text-white text-center mt-2.5 mb-1.5 font-special tracking-tight">
+        <h3 className="text-base sm:text-lg font-medium text-text-primary text-center mt-2.5 mb-1.5 font-special tracking-tight">
           Establece una contraseña
         </h3>
 
         {/* Descripción textual exacta de la imagen */}
-        <p className="text-[13px] text-[#9b9b9b] text-center leading-relaxed mb-4 px-1">
+        <p className="text-sm text-text-secondary text-center leading-relaxed mb-4 px-1">
           Elige una contraseña con al menos 8 caracteres, con letras y números.
         </p>
 
@@ -244,7 +244,7 @@ export function ChangePasswordModal({
         <form onSubmit={handleSubmit} className="w-full space-y-3.5">
           {/* Contraseña actual (requerida para seguridad del backend) */}
           <div>
-            <label className="block text-xs font-medium text-[#adadad] mb-1.5">
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">
               Contraseña actual {isEnforced && "(o temporal inicial)"}
             </label>
             <div className="relative">
@@ -258,22 +258,22 @@ export function ChangePasswordModal({
                 onBlur={() => setIsCurrentTouched(true)}
                 placeholder="Contraseña actual"
                 required
-                className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#141414] text-white outline-none transition-all placeholder:text-[#525252] pr-9 border ${isCurrentTouched && !currentPassword.trim()
-                  ? "border-rose-500/80 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
-                  : "border-[#383838] focus:border-[#2383e2] focus:ring-1 focus:ring-[#2383e2]"
+                className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-bg-app text-text-primary outline-none transition-all placeholder:text-text-disabled pr-9 border ${isCurrentTouched && !currentPassword.trim()
+                  ? "border-status-error focus:border-status-error focus:ring-1 focus:ring-status-error/30"
+                  : "border-border-primary focus:border-border-primary focus:ring-1 focus:ring-primary-DEFAULT"
                   }`}
               />
               <button
                 type="button"
                 onClick={() => setShowCurrent(!showCurrent)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-white p-1 transition-colors cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary p-1 transition-colors cursor-pointer"
                 aria-label="Ver contraseña"
               >
                 {showCurrent ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
             {isCurrentTouched && !currentPassword.trim() && (
-              <p className="text-[11px] text-rose-400 mt-1 flex items-center gap-1 animate-in fade-in duration-150">
+              <p className="text-xs text-status-error mt-1 flex items-center gap-1 animate-in fade-in duration-150">
                 <AlertCircle className="w-3 h-3 shrink-0" />
                 <span>Ingresa tu contraseña actual</span>
               </p>
@@ -282,7 +282,7 @@ export function ChangePasswordModal({
 
           {/* Ingresa una nueva contraseña */}
           <div>
-            <label className="block text-xs font-medium text-[#adadad] mb-1.5">
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">
               Ingresa una nueva contraseña
             </label>
             <div className="relative">
@@ -297,17 +297,17 @@ export function ChangePasswordModal({
                 placeholder="Nueva contraseña"
                 required
                 minLength={8}
-                className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#141414] text-white outline-none transition-all placeholder:text-[#525252] pr-9 border ${newPassword && !isDifferentFromCurrent
-                  ? "border-amber-500/70 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
+                className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-bg-app text-text-primary outline-none transition-all placeholder:text-text-disabled pr-9 border ${newPassword && !isDifferentFromCurrent
+                  ? "border-status-warning focus:border-status-warning focus:ring-1 focus:ring-status-warning/30"
                   : newPassword && hasMinLength && hasLettersAndNumbers
-                    ? "border-emerald-500/60 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30"
-                    : "border-[#383838] focus:border-[#2383e2] focus:ring-1 focus:ring-[#2383e2]"
+                    ? "border-status-success focus:border-status-success focus:ring-1 focus:ring-status-success/30"
+                    : "border-border-primary focus:border-border-primary focus:ring-1 focus:ring-primary-DEFAULT"
                   }`}
               />
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-white p-1 transition-colors cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary p-1 transition-colors cursor-pointer"
                 aria-label="Ver contraseña"
               >
                 {showNew ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -316,35 +316,35 @@ export function ChangePasswordModal({
 
             {/* Checklist interactiva y medidor de fortaleza de contraseña (UI/UX) */}
             {(newPassword.length > 0 || isNewFocused) && (
-              <div className="mt-2 p-2.5 rounded-lg bg-[#141414] border border-[#2d2d2d] space-y-2 animate-in fade-in duration-150">
+              <div className="mt-2 p-2.5 rounded-lg bg-bg-app border border-border-primary space-y-2 animate-in fade-in duration-150">
                 {/* Barra de progreso de fortaleza */}
                 {newPassword.length > 0 && (
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="text-[#808080]">Fortaleza:</span>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-text-muted">Fortaleza:</span>
                       <span className={`font-medium ${strengthColor}`}>{strengthLabel}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-1 h-1">
                       <div
                         className={`rounded-full transition-colors duration-200 ${strengthScore >= 1
                           ? strengthScore === 1
-                            ? "bg-rose-500"
+                            ? "bg-status-error"
                             : strengthScore === 2
-                              ? "bg-amber-400"
-                              : "bg-emerald-400"
-                          : "bg-[#2d2d2d]"
+                              ? "bg-status-warning"
+                              : "bg-status-success"
+                          : "bg-bg-accent"
                           }`}
                       />
                       <div
                         className={`rounded-full transition-colors duration-200 ${strengthScore >= 2
                           ? strengthScore === 2
-                            ? "bg-amber-400"
-                            : "bg-emerald-400"
-                          : "bg-[#2d2d2d]"
+                            ? "bg-status-warning"
+                            : "bg-status-success"
+                          : "bg-bg-accent"
                           }`}
                       />
                       <div
-                        className={`rounded-full transition-colors duration-200 ${strengthScore >= 3 ? "bg-emerald-400" : "bg-[#2d2d2d]"
+                        className={`rounded-full transition-colors duration-200 ${strengthScore >= 3 ? "bg-status-success" : "bg-bg-accent"
                           }`}
                       />
                     </div>
@@ -352,42 +352,42 @@ export function ChangePasswordModal({
                 )}
 
                 {/* Requisitos específicos */}
-                <div className="space-y-1 text-[11px] pt-0.5">
+                <div className="space-y-1 text-xs pt-0.5">
                   <div
-                    className={`flex items-center gap-1.5 transition-colors ${hasMinLength ? "text-emerald-400 font-medium" : "text-[#7e7e7e]"
+                    className={`flex items-center gap-1.5 transition-colors ${hasMinLength ? "text-status-success font-medium" : "text-text-muted"
                       }`}
                   >
                     {hasMinLength ? (
-                      <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <Check className="w-3 h-3 text-status-success shrink-0" />
                     ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#525252] mx-0.75 shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-border-strong mx-0.75 shrink-0" />
                     )}
                     <span>Al menos 8 caracteres</span>
                   </div>
 
                   <div
-                    className={`flex items-center gap-1.5 transition-colors ${hasLettersAndNumbers ? "text-emerald-400 font-medium" : "text-[#7e7e7e]"
+                    className={`flex items-center gap-1.5 transition-colors ${hasLettersAndNumbers ? "text-status-success font-medium" : "text-text-muted"
                       }`}
                   >
                     {hasLettersAndNumbers ? (
-                      <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <Check className="w-3 h-3 text-status-success shrink-0" />
                     ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#525252] mx-0.75 shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-border-strong mx-0.75 shrink-0" />
                     )}
-                    <span>Contiene letras y números</span>
+                    <span>Mayúscula, minúscula y número</span>
                   </div>
 
                   {currentPassword.trim().length > 0 && newPassword.length > 0 && (
                     <div
                       className={`flex items-center gap-1.5 transition-colors ${isDifferentFromCurrent
-                        ? "text-emerald-400 font-medium"
-                        : "text-amber-400"
+                        ? "text-status-success font-medium"
+                        : "text-status-warning"
                         }`}
                     >
                       {isDifferentFromCurrent ? (
-                        <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                        <Check className="w-3 h-3 text-status-success shrink-0" />
                       ) : (
-                        <AlertCircle className="w-3 h-3 text-amber-400 shrink-0" />
+                        <AlertCircle className="w-3 h-3 text-status-warning shrink-0" />
                       )}
                       <span>
                         {isDifferentFromCurrent
@@ -403,7 +403,7 @@ export function ChangePasswordModal({
 
           {/* Confirma la nueva contraseña */}
           <div>
-            <label className="block text-xs font-medium text-[#adadad] mb-1.5">
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">
               Confirma la nueva contraseña
             </label>
             <div className="relative">
@@ -418,19 +418,19 @@ export function ChangePasswordModal({
                 placeholder="Confirmar contraseña"
                 required
                 minLength={8}
-                className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-[#141414] text-white outline-none transition-all placeholder:text-[#525252] pr-9 border ${confirmPassword.length > 0
+                className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-bg-app text-text-primary outline-none transition-all placeholder:text-text-disabled pr-9 border ${confirmPassword.length > 0
                   ? passwordsMatch
-                    ? "border-emerald-500/70 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30"
-                    : "border-rose-500/70 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
+                    ? "border-status-success focus:border-status-success focus:ring-1 focus:ring-status-success/30"
+                    : "border-status-error focus:border-status-error focus:ring-1 focus:ring-status-error/30"
                   : isConfirmTouched && !confirmPassword
-                    ? "border-rose-500/70 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30"
-                    : "border-[#383838] focus:border-[#2383e2] focus:ring-1 focus:ring-[#2383e2]"
+                    ? "border-status-error focus:border-status-error focus:ring-1 focus:ring-status-error/30"
+                    : "border-border-primary focus:border-border-primary focus:ring-1 focus:ring-primary-DEFAULT"
                   }`}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-white p-1 transition-colors cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary p-1 transition-colors cursor-pointer"
                 aria-label="Ver contraseña"
               >
                 {showConfirm ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -441,13 +441,13 @@ export function ChangePasswordModal({
             {confirmPassword.length > 0 && (
               <div className="mt-1 animate-in fade-in duration-150">
                 {passwordsMatch ? (
-                  <p className="text-[11px] text-emerald-400 flex items-center gap-1.5 font-medium">
-                    <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                  <p className="text-xs text-status-success flex items-center gap-1.5 font-medium">
+                    <Check className="w-3 h-3 text-status-success shrink-0" />
                     <span>Las contraseñas coinciden</span>
                   </p>
                 ) : (
-                  <p className="text-[11px] text-rose-400 flex items-center gap-1.5">
-                    <AlertCircle className="w-3 h-3 text-rose-400 shrink-0" />
+                  <p className="text-xs text-status-error flex items-center gap-1.5">
+                    <AlertCircle className="w-3 h-3 text-status-error shrink-0" />
                     <span>Las contraseñas no coinciden</span>
                   </p>
                 )}
@@ -457,8 +457,8 @@ export function ChangePasswordModal({
 
           {/* Banner de error proveniente del servidor si ocurre */}
           {serverError && (
-            <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in duration-150">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <div className="p-2.5 rounded-lg bg-status-error-soft border border-status-error text-status-error text-xs flex items-start gap-2 animate-in fade-in duration-150">
+              <AlertCircle className="w-4 h-4 text-status-error shrink-0 mt-0.5" />
               <span className="leading-tight">{serverError}</span>
             </div>
           )}
@@ -468,8 +468,8 @@ export function ChangePasswordModal({
             type="submit"
             disabled={!isFormValid || isSubmitting}
             className={`w-full py-2.5 px-4 rounded-lg font-medium text-xs sm:text-sm transition-all duration-150 flex items-center justify-center gap-2 mt-4 shadow-sm ${isFormValid && !isSubmitting
-              ? "bg-[#2383e2] hover:bg-[#1d74c9] text-white cursor-pointer active:scale-[0.99]"
-              : "bg-[#2383e2]/40 text-white/50 cursor-not-allowed"
+              ? "bg-primary-DEFAULT hover:bg-primary-hover text-on-primary cursor-pointer active:scale-[0.99]"
+              : "bg-primary-DEFAULT/40 text-on-primary/50 cursor-not-allowed"
               }`}
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}

@@ -17,43 +17,37 @@ interface BadgeProps {
   className?: string;
 }
 
-export function Badge({
-  children,
-  variant = "neutral",
-  size = "md",
-  dot = false,
-  className = "",
-}: BadgeProps) {
-  const variantStyles = {
-    primary: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    success: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    warning: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    danger: "bg-rose-500/10 text-rose-400 border-rose-500/20",
-    purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-    cyan: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-    neutral: "bg-slate-800 text-slate-300 border-slate-700/60",
-  };
+const VARIANTS: Record<BadgeVariant, string> = {
+  primary: "bg-steel/12 text-steel border-steel/30",
+  success: "bg-status-success-soft text-status-success border-status-success-border",
+  warning: "bg-status-warning-soft text-status-warning border-status-warning-border",
+  danger: "bg-status-error-soft text-status-error border-status-error-border",
+  purple: "bg-text-primary/10 text-text-primary border-text-primary/20",
+  cyan: "bg-text-secondary/8 text-text-secondary border-border-strong",
+  neutral: "bg-bg-accent text-text-secondary border-border-primary",
+};
 
-  const dotStyles = {
-    primary: "bg-blue-400",
-    success: "bg-emerald-400 animate-pulse",
-    warning: "bg-amber-400",
-    danger: "bg-rose-400 animate-pulse",
-    purple: "bg-purple-400",
-    cyan: "bg-cyan-400",
-    neutral: "bg-slate-400",
-  };
+const DOTS: Record<BadgeVariant, string> = {
+  primary: "bg-steel",
+  success: "bg-status-success",
+  warning: "bg-status-warning",
+  danger: "bg-status-error",
+  purple: "bg-text-primary",
+  cyan: "bg-text-secondary",
+  neutral: "bg-text-muted",
+};
 
-  const sizeStyles = {
-    sm: "text-xs px-2 py-0.5",
-    md: "text-xs font-medium px-2.5 py-1",
-  };
+const SIZES = {
+  sm: "text-xs px-1.5 py-px",
+  md: "text-xs px-2 py-0.5",
+};
 
+export function Badge({ children, variant = "neutral", size = "md", dot = false, className = "" }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded font-medium border whitespace-nowrap ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
     >
-      {dot && <span className={`w-1.5 h-1.5 rounded-full ${dotStyles[variant]}`} />}
+      {dot && <span className={`w-1.5 h-1.5 rounded-full ${DOTS[variant]}`} />}
       {children}
     </span>
   );

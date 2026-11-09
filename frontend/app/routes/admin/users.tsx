@@ -38,7 +38,7 @@ import { useAuth } from "../../context/AuthContext";
 
 const ROLE_LABELS: Record<UserRole, { label: string; variant: "purple" | "primary" | "cyan" }> = {
   admin: { label: "Administrador", variant: "purple" },
-  operator: { label: "Operador de Patio", variant: "primary" },
+  operator: { label: "Operador", variant: "primary" },
   support: { label: "Soporte Técnico", variant: "cyan" },
 };
 
@@ -49,11 +49,11 @@ const ROLE_META: Record<UserRole, { icon: LucideIcon; description: string }> = {
   },
   operator: {
     icon: Car,
-    description: "Opera el patio: ingreso manual, vehículos y tiquetes.",
+    description: "Interviene en ingresos y salidas, y reporta tickets.",
   },
   support: {
     icon: Headset,
-    description: "Atiende dispositivos y tiquetes del sistema.",
+    description: "Atiende dispositivos y tickets del sistema.",
   },
 };
 
@@ -73,14 +73,14 @@ type SortDir = "asc" | "desc";
 const ROLE_FILTER_OPTIONS: { value: "todos" | UserRole; label: string }[] = [
   { value: "todos", label: "Todos los roles" },
   { value: "admin", label: "Administradores" },
-  { value: "operator", label: "Operadores de patio" },
+  { value: "operator", label: "Operadores" },
   { value: "support", label: "Soporte técnico" },
 ];
 
 const PAGE_SIZES = [5, 10, 20, 50];
 
 const inputCls =
-  "w-full rounded-lg bg-bg-app border border-border-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-all hover:border-border-strong focus:border-primary-DEFAULT focus:ring-3 focus:ring-primary-muted";
+  "w-full rounded-lg bg-bg-app border border-border-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-all hover:border-border-strong focus:border-text-primary focus:ring-3 focus:ring-primary-muted";
 
 const errorMessage = (err: unknown) =>
   err instanceof ApiError ? err.message : "No se pudo conectar con el servidor.";
@@ -140,11 +140,19 @@ const pageList = (current: number, total: number): (number | "…")[] => {
 };
 
 export async function clientLoader() {
-  const [{ users }, roles] = await Promise.all([
-    userService.list(),
-    userService.listRoles(),
-  ]);
-  return { users, roles };
+  try {
+    const [{ users }, roles] = await Promise.all([
+      userService.list(),
+      userService.listRoles(),
+    ]);
+    return { users, roles };
+  } catch (err) {
+    // Sin permiso o sin sesión: el layout muestra el aviso o redirige al login
+    if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+      return { users: [] as User[], roles: [] as Role[] };
+    }
+    throw err;
+  }
 }
 
 export default function AdminUsers({ loaderData }: Route.ComponentProps) {
@@ -320,6 +328,9 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
     if (newPassword.length < 8 || newPassword.length > 40) {
       return setCreateError("La contraseña debe tener entre 8 y 40 caracteres.");
     }
+    if (!/[a-z]/.test(newPassword) || !/[A-Z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      return setCreateError("La contraseña debe incluir mayúscula, minúscula y número.");
+    }
     if (!newRoleId) return setCreateError("Seleccione un rol.");
 
     setShowCreateConfirm(true);
@@ -463,7 +474,7 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
               placeholder="Buscar cuentas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 rounded-lg bg-bg-app border border-border-primary text-xs text-text-primary placeholder:text-text-disabled outline-none transition-all hover:border-border-strong focus:border-primary-DEFAULT focus:ring-3 focus:ring-primary-muted font-sans"
+              className="w-full pl-9 pr-8 py-2 rounded-lg bg-bg-app border border-border-primary text-xs text-text-primary placeholder:text-text-disabled outline-none transition-all hover:border-border-strong focus:border-text-primary focus:ring-3 focus:ring-primary-muted font-sans"
             />
             {searchTerm && (
               <button
@@ -492,27 +503,27 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
             type="button"
             onClick={openCreate}
             disabled={roles.length === 0}
-            className="flex justify-center items-center gap-2 px-3 py-2 bg-primary-DEFAULT rounded-lg w-full sm:w-auto shrink-0 cursor-pointer"
+            className="btn-primary w-full sm:w-auto shrink-0"
           >
             <UserPlus className="w-4 h-4" />
-            <span className="font-special font-bold text-[13px]">Nueva cuenta</span>
+            <span>Nueva cuenta</span>
           </button>
         </div>
       </div>
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-bg-app/50 border-b border-border-secondary">
-              <tr className="text-text-muted uppercase tracking-wider text-[10px] font-special">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-white/2 border-b border-border-primary">
+              <tr className="text-text-muted text-xs">
                 <SortTh label="Nombre" k="fullName" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} className="px-5" />
                 <SortTh label="Usuario" k="username" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                 <SortTh label="Correo" k="email" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                 <SortTh label="Rol" k="role" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                <th className="py-3 px-4 font-bold">Estado</th>
+                <th className="py-3 px-4 font-normal">Estado</th>
                 <SortTh label="Último acceso" k="lastLogin" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                <SortTh label="Alta" k="createdAt" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                <th className="py-3 px-5 text-right font-bold">Acciones</th>
+                <SortTh label="Alta" k="createdAt" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} className="px-4 hidden 2xl:table-cell" />
+                <th className="py-3 px-5 text-right font-normal">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-secondary">
@@ -531,10 +542,10 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
                   const role = u.role ? ROLE_LABELS[u.role] : null;
 
                   return (
-                    <tr key={u.id} className="hover:bg-bg-accent/20 transition-colors">
+                    <tr key={u.id} className="hover:bg-white/2 transition-colors">
                       <td className="py-3 px-5">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-bg-accent border border-border-strong/50 flex items-center justify-center font-mono font-bold text-text-primary text-[11px] shrink-0 uppercase">
+                          <div className="w-8 h-8 rounded-full bg-bg-accent border border-border-strong/50 flex items-center justify-center font-medium text-text-primary text-xs shrink-0 uppercase">
                             {(u.fullName || u.username).slice(0, 2)}
                           </div>
                           <span className="font-semibold text-text-primary truncate">
@@ -543,12 +554,12 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5 font-mono">
+                        <div className="flex items-center gap-1.5">
                           <span className="font-medium text-text-primary">@{u.username}</span>
-                          {isSelf && <span className="text-[10px] text-text-muted">(tú)</span>}
+                          {isSelf && <span className="text-[11px] text-text-muted">(tú)</span>}
                           {isSuperuser && (
                             <span
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium bg-status-warning-soft text-status-warning border border-status-warning"
                               title="Superusuario definido en variables de entorno (.env)"
                             >
                               <ShieldCheck className="w-3 h-3" />
@@ -557,12 +568,12 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
                           )}
                         </div>
                         {u.mustChangePassword && (
-                          <p className="text-[10px] text-status-warning mt-0.5">
+                          <p className="text-[11px] text-status-warning mt-0.5">
                             Cambio pendiente
                           </p>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-text-secondary font-mono truncate max-w-55" title={u.email ?? undefined}>
+                      <td className="py-3 px-4 text-text-secondary truncate max-w-55" title={u.email ?? undefined}>
                         {u.email || <span className="text-text-disabled">—</span>}
                       </td>
                       <td className="py-3 px-4">
@@ -587,20 +598,20 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-text-secondary font-mono">{formatDate(u.lastLogin, true)}</td>
-                      <td className="py-3 px-4 text-text-muted font-mono">{formatDate(u.createdAt)}</td>
+                      <td className="py-3 px-4 text-text-secondary whitespace-nowrap">{formatDate(u.lastLogin, true)}</td>
+                      <td className="py-3 px-4 text-text-muted whitespace-nowrap hidden 2xl:table-cell">{formatDate(u.createdAt)}</td>
                       <td className="py-3 px-5">
                         {/* El backend también rechaza estas acciones sobre superuser y sobre la propia cuenta */}
                         {isSuperuser ? (
                           <div
-                            className="flex items-center justify-end gap-1.5 text-text-muted text-[11px]"
+                            className="flex items-center justify-end gap-1.5 text-text-muted text-xs"
                             title="Cuenta superusuario protegida por .env"
                           >
-                            <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                            <span className="font-mono">Protegido</span>
+                            <ShieldCheck className="w-3.5 h-3.5 text-status-warning" />
+                            <span>Protegido</span>
                           </div>
                         ) : isSelf ? (
-                          <p className="text-right text-[11px] text-text-muted">—</p>
+                          <p className="text-right text-xs text-text-muted">—</p>
                         ) : (
                           <div className="flex items-center justify-end gap-1">
                             {locked && (
@@ -764,7 +775,7 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
               autoComplete="off"
               required
             />
-            <p className="mt-1.5 text-[11px] text-text-muted">
+            <p className="mt-1.5 text-xs text-text-muted">
               Entre 3 y 20 caracteres, sin espacios ni «@». Podrá iniciar sesión con el usuario o el correo.
             </p>
           </div>
@@ -801,7 +812,7 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
                 {copiedNew ? <Check className="w-4 h-4 text-status-success" /> : <Copy className="w-4 h-4" />}
               </IconSquare>
             </div>
-            <p className="mt-1.5 text-[11px] text-text-muted">
+            <p className="mt-1.5 text-xs text-text-muted">
               Generada automáticamente. Cópiala y entrégala por un canal seguro antes de crear la cuenta.
             </p>
           </div>
@@ -837,15 +848,15 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
           <div className="space-y-5">
             {editError && <ErrorBox message={editError} />}
 
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-bg-app border border-border-primary">
-              <div className="w-10 h-10 rounded-full bg-bg-accent border border-border-strong/50 flex items-center justify-center font-mono font-bold text-text-primary text-xs shrink-0 uppercase">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-bg-app border border-border-primary">
+              <div className="w-10 h-10 rounded-full bg-bg-accent border border-border-strong/50 flex items-center justify-center font-medium text-text-primary text-xs shrink-0 uppercase">
                 {(editing.fullName || editing.username).slice(0, 2)}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-text-primary truncate">
                   {editing.fullName || `@${editing.username}`}
                 </p>
-                <p className="text-[11px] text-text-muted font-mono truncate">
+                <p className="text-xs text-text-muted truncate">
                   {editing.fullName ? `@${editing.username}` : "Sin nombre registrado"}
                   {editing.email ? ` · ${editing.email}` : ""}
                 </p>
@@ -894,7 +905,7 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
               {copied ? <Check className="w-4 h-4 text-status-success" /> : <Copy className="w-4 h-4" />}
             </IconSquare>
           </div>
-          <p className="text-[11px] text-text-muted">
+          <p className="text-xs text-text-muted">
             No se volverá a mostrar. Las sesiones activas del usuario fueron cerradas y deberá definir una
             contraseña nueva al ingresar.
           </p>
@@ -934,15 +945,15 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
           onConfirm={executeCreateAccount}
         >
           <div className="space-y-3 text-left">
-            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-bg-app border border-border-primary">
-              <div className="w-10 h-10 rounded-full bg-bg-accent border border-border-strong/50 flex items-center justify-center font-mono font-bold text-text-primary text-xs shrink-0 uppercase">
+            <div className="flex items-center gap-3 p-3.5 rounded-lg bg-bg-app border border-border-primary">
+              <div className="w-10 h-10 rounded-full bg-bg-accent border border-border-strong/50 flex items-center justify-center font-medium text-text-primary text-xs shrink-0 uppercase">
                 {(newFullName || newUsername).slice(0, 2)}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-text-primary truncate">
                   {newFullName.trim()}
                 </p>
-                <p className="text-xs text-text-muted font-mono truncate">
+                <p className="text-xs text-text-muted truncate">
                   @{newUsername.trim()} · {newEmail.trim()}
                 </p>
               </div>
@@ -959,7 +970,7 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
               })()}
             </div>
 
-            <div className="rounded-lg bg-bg-accent/40 border border-border-secondary px-3 py-2 text-[11px] text-text-secondary flex items-start gap-2">
+            <div className="rounded-lg bg-bg-accent/40 border border-border-secondary px-3 py-2 text-xs text-text-secondary flex items-start gap-2">
               <KeyRound className="w-3.5 h-3.5 mt-0.5 text-text-muted shrink-0" />
               <span>
                 Se asignará la contraseña generada y el usuario deberá actualizarla de forma obligatoria en su primer inicio de sesión.
@@ -1000,18 +1011,18 @@ function SortTh({
   const Icon = !active ? ChevronsUpDown : sortDir === "asc" ? ChevronUp : ChevronDown;
   return (
     <th
-      className={`py-3 ${className} font-bold`}
+      className={`py-3 ${className} font-normal`}
       aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
     >
       <button
         type="button"
         onClick={() => onSort(k)}
-        className={`inline-flex items-center gap-1 uppercase tracking-wider cursor-pointer transition-colors hover:text-text-primary ${active ? "text-text-primary" : ""
+        className={`inline-flex items-center gap-1 cursor-pointer transition-colors hover:text-text-primary ${active ? "text-text-primary" : ""
           }`}
         title={k === "role" ? "Orden personalizado: Admin → Operador → Soporte" : `Ordenar por ${label.toLowerCase()}`}
       >
         {label}
-        <Icon className={`w-3 h-3 ${active ? "text-primary-DEFAULT" : "opacity-60"}`} />
+        <Icon className={`w-3 h-3 ${active ? "text-text-primary" : "opacity-60"}`} />
       </button>
     </th>
   );
@@ -1032,8 +1043,8 @@ function ActionBtn({
 }) {
   const tones = {
     default: "text-text-secondary hover:text-text-primary hover:bg-bg-accent/60",
-    success: "text-status-success hover:bg-status-success-bg",
-    warning: "text-status-warning hover:bg-status-warning-bg",
+    success: "text-status-success hover:bg-status-success-soft",
+    warning: "text-status-warning hover:bg-status-warning-soft",
   };
   return (
     <button
@@ -1069,7 +1080,7 @@ function PageBtn({
       aria-current={active ? "page" : undefined}
       {...rest}
       className={`min-w-7 h-7 px-2 rounded-md text-xs font-medium flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${active
-        ? "bg-primary-DEFAULT text-white"
+        ? "bg-primary-DEFAULT text-on-primary"
         : "text-text-secondary hover:bg-bg-accent/60 hover:text-text-primary"
         }`}
     >
@@ -1096,7 +1107,7 @@ function IconSquare({
       aria-label={title}
       onClick={onClick}
       className={`w-9.5 h-9.5 shrink-0 rounded-lg border flex items-center justify-center transition-colors cursor-pointer ${active
-        ? "border-status-success-border bg-status-success-bg"
+        ? "border-status-success-border bg-status-success-soft"
         : "border-border-primary bg-bg-app text-text-secondary hover:text-text-primary hover:border-border-strong"
         }`}
     >
@@ -1130,38 +1141,38 @@ function RoleSelector({
             role="radio"
             aria-checked={active}
             onClick={() => onChange(r.id)}
-            className={`group flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer outline-none focus-visible:ring-3 focus-visible:ring-primary-muted ${active
-              ? "border-primary-DEFAULT bg-primary-muted"
+            className={`group flex items-center gap-3 p-3 rounded-lg border text-left transition-all cursor-pointer outline-none focus-visible:ring-3 focus-visible:ring-primary-muted ${active
+              ? "border-text-primary bg-primary-muted"
               : "border-border-primary bg-bg-app hover:border-border-strong hover:bg-bg-accent/30"
               }`}
           >
             <span
               className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${active
-                ? "border-primary-DEFAULT/40 bg-bg-app text-primary-DEFAULT"
-                : "border-border-primary bg-bg-card text-text-secondary group-hover:text-text-primary"
+                ? "border-border-strong bg-bg-app text-text-primary"
+                : "border-border-primary bg-bg-surface text-text-secondary group-hover:text-text-primary"
                 }`}
             >
               <Icon className="w-4 h-4" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
-                <span className="text-[13px] font-semibold text-text-primary">
+                <span className="text-sm font-semibold text-text-primary">
                   {ROLE_LABELS[r.name]?.label ?? r.name}
                 </span>
                 {currentId === r.id && (
-                  <span className="text-[10px] px-1.5 py-px rounded-full border border-border-strong text-text-muted">
+                  <span className="text-[11px] px-1.5 py-px rounded-full border border-border-strong text-text-muted">
                     Actual
                   </span>
                 )}
               </span>
               {meta && (
-                <span className="block text-[11px] leading-snug text-text-muted mt-0.5">
+                <span className="block text-xs leading-snug text-text-muted mt-0.5">
                   {meta.description}
                 </span>
               )}
             </span>
             <span
-              className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${active ? "border-primary-DEFAULT bg-primary-DEFAULT text-white" : "border-border-strong"
+              className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${active ? "border-text-primary bg-primary-DEFAULT text-on-primary" : "border-border-strong"
                 }`}
               aria-hidden
             >
@@ -1230,7 +1241,7 @@ function CustomSelect<T extends string | number>({
           bg-bg-app border text-text-secondary outline-none transition-all cursor-pointer 
           hover:border-border-strong focus-visible:ring-3 focus-visible:ring-primary-muted 
           ${compact ? "px-2.5 py-1 text-xs" : "px-3 py-2 text-xs"} 
-          ${open ? "border-primary-DEFAULT ring-3 ring-primary-muted" : "border-border-primary"}`
+          ${open ? "border-text-primary ring-3 ring-primary-muted" : "border-border-primary"}`
         }
       >
         <div className="flex items-center gap-2 truncate">
@@ -1249,7 +1260,7 @@ function CustomSelect<T extends string | number>({
           role="listbox"
           aria-label={ariaLabel}
           className={`absolute z-40 ${align === "right" ? "right-0" : "left-0"
-            } min-w-full max-h-64 overflow-y-auto p-1.5 rounded-xl bg-bg-surface-elevated border border-border-primary shadow-2xl shadow-black/50 animate-in fade-in zoom-in-95 duration-100 ${dropUp ? "bottom-full mb-1.5 origin-bottom" : "top-full mt-1.5 origin-top"
+            } min-w-full max-h-64 overflow-y-auto p-1.5 rounded-lg bg-bg-surface-elevated border border-border-primary shadow-2xl shadow-black/50 animate-in fade-in zoom-in-95 duration-100 ${dropUp ? "bottom-full mb-1.5 origin-bottom" : "top-full mt-1.5 origin-top"
             }`}
         >
           {options.map((o) => {
@@ -1268,7 +1279,7 @@ function CustomSelect<T extends string | number>({
                     }`}
                 >
                   <span>{o.label}</span>
-                  {active && <Check className="w-3.5 h-3.5 text-primary-DEFAULT shrink-0" />}
+                  {active && <Check className="w-3.5 h-3.5 text-text-primary shrink-0" />}
                 </button>
               </li>
             );
@@ -1379,9 +1390,9 @@ function ConfirmDialog({
   }, [onCancel, isLoading]);
 
   const tones = {
-    primary: "bg-primary-muted text-primary-DEFAULT border-primary-DEFAULT/30",
-    warning: "bg-status-warning-bg text-status-warning border-status-warning-border",
-    danger: "bg-status-error-bg text-status-error border-status-error-border",
+    primary: "bg-primary-muted text-text-primary border-border-strong",
+    warning: "bg-status-warning-soft text-status-warning border-status-warning-border",
+    danger: "bg-status-error-soft text-status-error border-status-error-border",
   };
 
   return (
@@ -1402,8 +1413,8 @@ function ConfirmDialog({
           <div className={`mx-auto w-11 h-11 rounded-full border flex items-center justify-center ${tones[tone]}`}>
             <Icon className="w-5 h-5" />
           </div>
-          <h2 className="text-base font-bold font-special text-text-primary">{title}</h2>
-          <p className="text-[13px] leading-relaxed text-text-muted">{description}</p>
+          <h2 className="text-base font-medium font-special text-text-primary">{title}</h2>
+          <p className="text-sm leading-relaxed text-text-muted">{description}</p>
           {children}
         </div>
         <div className="px-6 py-4 border-t border-border-secondary flex items-center justify-end gap-2">
@@ -1476,13 +1487,13 @@ function Dialog({
       >
         <div className="card-header items-start shrink-0 border-b border-border-secondary">
           <div>
-            <h2 className="text-base sm:text-lg font-bold font-special text-text-primary">{title}</h2>
-            {subtitle && <p className="text-xs sm:text-[13px] text-text-muted mt-0.5">{subtitle}</p>}
+            <h2 className="text-base sm:text-lg font-medium font-special text-text-primary">{title}</h2>
+            {subtitle && <p className="text-xs sm:text-sm text-text-muted mt-0.5">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-5 h-5 mt-0.5 rounded-full bg-[#2f2f2f] hover:bg-[#3d3d3d] text-neutral-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            className="w-5 h-5 mt-0.5 rounded-full bg-bg-accent hover:bg-border-primary text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer shrink-0"
             aria-label="Cerrar modal"
           >
             <X className="w-3.5 h-3.5" />
@@ -1503,7 +1514,7 @@ function Dialog({
 
 function ErrorBox({ message }: { message: string }) {
   return (
-    <div className="p-3 rounded-lg bg-status-error-bg border border-status-error-border text-status-error text-xs flex items-center gap-2">
+    <div className="p-3 rounded-lg bg-status-error-soft border border-status-error-border text-status-error text-xs flex items-center gap-2">
       <AlertTriangle className="w-4 h-4 shrink-0" />
       <span>{message}</span>
     </div>

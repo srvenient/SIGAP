@@ -12,6 +12,15 @@ from src.server.lifespan import lifespan
 from src.server.auth.api.exception_handlers import register_auth_errors
 from src.server.auth.api.auth_router import auth_router
 from src.server.auth.api.user_router import user_router
+from src.server.audit.api.audit_router import audit_router
+from src.server.device.api.device_router import device_router
+from src.server.intervention.api.intervention_router import intervention_router
+from src.server.parking.api.parking_router import parking_router
+from src.server.payment.api.public_router import public_router
+from src.server.reporting.api.reporting_router import reporting_router
+from src.server.shared.domain.errors import register_domain_errors
+from src.server.tariff.api.tariff_router import tariff_router
+from src.server.ticket.api.ticket_router import ticket_router
 from src.server.transaction.api.transaction_router import transaction_router
 
 
@@ -58,7 +67,19 @@ async def health_check():
 
 
 register_auth_errors(app)
+register_domain_errors(app)
 
-app.include_router(auth_router, prefix=settings.API_V1_STR)
-app.include_router(user_router, prefix=settings.API_V1_STR)
-app.include_router(transaction_router, prefix=settings.API_V1_STR)
+for router in (
+        auth_router,
+        user_router,
+        parking_router,
+        tariff_router,
+        transaction_router,
+        public_router,
+        device_router,
+        intervention_router,
+        ticket_router,
+        reporting_router,
+        audit_router,
+):
+    app.include_router(router, prefix=settings.API_V1_STR)

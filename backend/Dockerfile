@@ -49,7 +49,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY . .
 
-CMD ["fastapi", "dev", "--host", "0.0.0.0", "--port", "8000", "src/server/main.py"]
+CMD ["sh", "-c", "python scripts/prestart.py && exec fastapi dev --host 0.0.0.0 --port 8000 src/server/main.py"]
 
 # ==========================================
 # STAGE 4: Production environment
@@ -67,4 +67,4 @@ COPY --chown=appuser:appuser . .
 
 USER appuser
 
-CMD ["fastapi", "run", "--workers", "4", "--host", "0.0.0.0", "--port", "8000", "src/server/main.py"]
+CMD ["sh", "-c", "python scripts/prestart.py && exec fastapi run --workers 4 --host 0.0.0.0 --port 8000 src/server/main.py"]

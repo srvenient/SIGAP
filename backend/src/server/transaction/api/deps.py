@@ -2,21 +2,13 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from server.transaction.application.transaction_service import TransactionService
-from src.server.transaction.domain.transaction_repository import TransactionRepository
-from src.server.transaction.infrastructure.postgres_transaction_repository import PostgresTransactionRepository
 from src.server.shared.api.deps import SessionDep
+from src.server.transaction.application.transaction_service import TransactionService
+from src.server.wiring import build_transaction_service
 
 
-def get_transaction_repository(session: SessionDep) -> TransactionRepository:
-    return PostgresTransactionRepository(session)
-
-
-TransactionRepositoryDep = Annotated[PostgresTransactionRepository, Depends(get_transaction_repository)]
-
-
-def get_transaction_service(transaction_repository: TransactionRepositoryDep) -> TransactionService:
-    return TransactionService(transaction_repository)
+def get_transaction_service(session: SessionDep) -> TransactionService:
+    return build_transaction_service(session)
 
 
 TransactionServiceDep = Annotated[TransactionService, Depends(get_transaction_service)]

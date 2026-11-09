@@ -18,7 +18,7 @@ class RoleName(str, Enum):
 
 ROLE_DESCRIPTIONS: dict[RoleName, str] = {
     RoleName.ADMIN: "Administrador del sistema",
-    RoleName.OPERATOR: "Operador de patio",
+    RoleName.OPERATOR: "Operador",
     RoleName.SUPPORT: "Soporte técnico",
 }
 

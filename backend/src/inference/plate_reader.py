@@ -1,28 +1,9 @@
-import re
 from dataclasses import dataclass
 import easyocr
 from loguru import logger
 
 from src.processing.text_cleaner import sanitize_text, format_colombian_plate
-from src.server.transaction.domain.transaction import VehicleType
-
-# Patrones estrictos de 6 caracteres para Colombia
-CAR_PATTERN = re.compile(r"^[A-Z]{3}\d{3}$")
-MOTO_PATTERN = re.compile(r"^[A-Z]{3}\d{2}[A-Z]$")
-
-
-def identify_vehicle_type(formatted_plate: str) -> VehicleType:
-    if not formatted_plate:
-        return VehicleType.UNKNOWN
-
-    plate = formatted_plate.replace("-", "").strip().upper()
-
-    if CAR_PATTERN.match(plate):
-        return VehicleType.CAR
-    if MOTO_PATTERN.match(plate):
-        return VehicleType.MOTORCYCLE
-
-    return VehicleType.UNKNOWN
+from src.server.transaction.domain.plate import VehicleType, identify_vehicle_type
 
 
 @dataclass(frozen=True)
