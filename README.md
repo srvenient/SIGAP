@@ -19,6 +19,9 @@ Plataforma integral diseñada para la automatización, control de acceso vehicul
 ## Índice
 
 - [Características](#características)
+- [Arquitectura](#arquitectura)
+- [Roles y pantallas](#roles-y-pantallas)
+- [Flujo del vehículo y pago](#flujo-del-vehículo-y-pago)
 - [Stack tecnológico](#stack-tecnológico)
 - [Cómo comenzar](#cómo-comenzar)
   - [Requisitos](#requisitos)
@@ -28,6 +31,7 @@ Plataforma integral diseñada para la automatización, control de acceso vehicul
 - [Documentación de la API](#documentación-de-la-api)
 - [Estructura del Proyecto](#estructura-del-proyecto)
 - [Pruebas](#pruebas)
+- [Limitaciones conocidas](#limitaciones-conocidas)
 
 ---
 
@@ -40,6 +44,77 @@ Plataforma integral diseñada para la automatización, control de acceso vehicul
 - **Soporte técnico:** estado de cámaras y talanqueras en tiempo real, eventos técnicos y tickets manuales o automáticos con historial.
 - **Auditoría inmutable:** cada acción relevante queda registrada y un trigger de PostgreSQL rechaza cualquier modificación.
 - **Seguridad:** contraseñas con Argon2, JWT rotativos en cookies httpOnly, bloqueo por intentos fallidos, rate limiting y clave de dispositivo para el worker.
+
+---
+
+## Arquitectura
+
+SIGAP se reparte en dos equipos. El backend es el único que decide; el worker solo lee placas y ejecuta lo autorizado.
+
+```text
+  Navegador (conductor: /pago, /punto · personal: panel por rol)
+      │
+      │ HTTPS · cookies httpOnly
+      ▼
+  [ Servidor · Docker Compose ]
+  Frontend (React + Nginx) ──REST──► Backend FastAPI ──SQL──► PostgreSQL 16
+                                          ▲
+                                          │ X-Device-Key · heartbeat cada 5 s
+  [ Equipo del parqueadero · uv ]         │
+  Cámaras ──video──► camera_worker.py ────┘
+                            │
+                            │ serial 9600 (E, S, P, T / ACK, CLOSED, PONG)
+                            ▼
+                  Arduino + talanqueras (relés en pines 8 y 9)
+```
+
+| Componente | Dónde corre | Responsabilidad |
+| :--- | :--- | :--- |
+| Frontend | Docker (Vite en desarrollo, Nginx en producción) | Módulo de pago, pantallas de carril y panel por rol |
+| Backend | Docker, puerto 8000 | Reglas de negocio, cobro, permisos y auditoría |
+| PostgreSQL 16 | Docker, puerto 5432 | Datos; auditoría e históricos inmutables por trigger |
+| Worker de cámaras | Equipo del parqueadero, con `uv` | YOLO + EasyOCR, 3 lecturas iguales por placa, control del Arduino |
+| Arduino | USB serial, 9600 baudios | Relé de entrada en el pin 8 y de salida en el pin 9; responde `ACK` |
+
+Cada módulo del backend (`auth`, `parking`, `tariff`, `transaction`, `payment`, `device`, `intervention`, `ticket`, `audit`, `reporting`) separa las capas `api/`, `application/`, `domain/` e `infrastructure/`.
+
+---
+
+## Roles y pantallas
+
+| Rol | Acceso | Pantallas |
+| :--- | :--- | :--- |
+| Conductor | Sin cuenta | `/pago` (módulo de pago), `/punto/ingreso` y `/punto/salida` (pantallas de carril) |
+| Administrador | Usuario y contraseña | Vehículos dentro, alertas, transacciones, recaudo, dispositivos, tarifas, usuarios, parqueadero y auditoría |
+| Operador | Usuario y contraseña | Alertas, vehículos dentro y tickets técnicos |
+| Soporte técnico | Usuario y contraseña | Dispositivos y tickets técnicos |
+
+El panel interno se abre en `/`. El menú solo oculta opciones; el permiso real lo valida el backend en cada endpoint.
+
+---
+
+## Flujo del vehículo y pago
+
+Una transacción pasa por tres estados: `ENTERED` → `PAID` → `COMPLETED`. La talanquera de salida solo abre si la transacción está en `PAID`.
+
+1. **Ingreso:** la cámara confirma la placa con 3 lecturas iguales y el backend valida formato, cupos y duplicados. El Arduino abre la entrada y la transacción queda en `ENTERED`.
+2. **Pago:** antes de salir, el conductor entra a `/pago`, escribe su placa y ve el valor a pagar. Elige Tarjeta, PSE o Nequi y se crea un intento de pago con referencia `SGP-…`.
+3. **Confirmación:** con la pasarela simulada, el propio módulo muestra los botones para aprobar o rechazar. Si se aprueba, la transacción pasa a `PAID` y el valor queda congelado aunque la tarifa cambie después.
+4. **Salida:** la cámara de salida lee la placa, el backend verifica `PAID`, el Arduino abre y la transacción pasa a `COMPLETED`.
+
+**Cálculo del valor:** los minutos se redondean hacia arriba, con un mínimo de 1. Hasta `full_rate_after_minutes` (300 por defecto) se cobra por horas más fracciones iniciadas. Pasado ese límite se cobra la tarifa plena por cada período de 12 horas iniciado.
+
+**Excepciones:**
+
+| Caso | Qué pasa |
+| :--- | :--- |
+| Pago rechazado, cancelado o vencido (180 s) | El intento queda en auditoría; la transacción sigue en `ENTERED` y el conductor puede reintentar |
+| Llega a la salida sin pagar | Respuesta 402, la talanquera no abre y se crea la alerta `PAYMENT_PENDING` para el Operador |
+| Llega a la salida sin ingreso registrado | Respuesta 404 y alerta `NO_ACTIVE_TRANSACTION` |
+| Placa ilegible durante 4 s | Alerta con foto para que el Operador corrija la placa o registre el ingreso manual |
+| El Arduino no responde `ACK` | Evento `GATE_NO_RESPONSE` y ticket automático para Soporte |
+
+La apertura manual de salida también exige `PAID`: el Operador puede saltarse la cámara, no el cobro.
 
 ---
 
@@ -106,7 +181,7 @@ El script `scripts/deploy.sh` detecta automáticamente si el host cuenta con una
 
 #### 3. Ejecución del proyecto
 
-El proyecto centraliza sus operaciones de despliegue y administración a través del script de automatización [`scripts/deploy.sh`](file:///home/srvenient/eternal-dev/fullstack/SIGAP/scripts/deploy.sh). A continuación se detalla cómo ejecutarlo en los diferentes sistemas operativos:
+El proyecto centraliza sus operaciones de despliegue y administración a través del script de automatización [`scripts/deploy.sh`](scripts/deploy.sh). A continuación se detalla cómo ejecutarlo en los diferentes sistemas operativos:
 
 ##### A. En Linux / WSL2
 1. Otorga permisos de ejecución al script (solo la primera vez):
@@ -150,7 +225,7 @@ Dado que los scripts de automatización del proyecto están escritos en sintaxis
 
 #### 4. Ejecución del Worker de Cámaras (camera_worker.py)
 
-El script [`backend/scripts/camera_worker.py`](file:///home/srvenient/eternal-dev/fullstack/SIGAP/backend/scripts/camera_worker.py) opera como el agente perimetral de visión por computadora (LPR/ANPR). Se encarga de procesar las capturas vehiculares, detectar vehículos y placas mediante YOLO y OCR, y enviar automáticamente las transacciones al backend para la apertura de talanqueras o control de acceso vehicular.
+El script [`backend/scripts/camera_worker.py`](backend/scripts/camera_worker.py) opera como el agente perimetral de visión por computadora (LPR/ANPR). Se encarga de procesar las capturas vehiculares, detectar vehículos y placas mediante YOLO y OCR, y enviar automáticamente las transacciones al backend para la apertura de talanqueras o control de acceso vehicular.
 
 Debido a su interacción con hardware local (cámaras USB/RTSP o microcontroladores como Arduino), el script está diseñado para ejecutarse nativamente en el Host utilizando `uv`.
 
@@ -162,12 +237,12 @@ El worker lee las cámaras de entrada y salida (`CAM_ENTRY_INDEX`, `CAM_EXIT_IND
 
 La talanquera se controla por serial con el sketch [`arduino/sigap_talanquera/sigap_talanquera.ino`](arduino/sigap_talanquera/sigap_talanquera.ino), que **debe cargarse en el Arduino**: el worker espera su confirmación `ACK` y trata como fallo cualquier orden sin respuesta. El `ACK` confirma que el Arduino activó el relé, no que la barrera se haya movido; sin sensor de paso, el cierre es por tiempo y se configura en **Parqueadero**.
 
-| Pantalla | Ruta | Acceso |
+| Orden (PC → Arduino) | Respuesta (Arduino → PC) | Significado |
 | :--- | :--- | :--- |
-| Módulo de pago | `/pago` | Público |
-| Pantalla del carril de ingreso | `/punto/ingreso` | Público |
-| Pantalla del carril de salida | `/punto/salida` | Público |
-| Panel de administración | `/` | Usuario y contraseña |
+| `E` / `S` | `ACK:E` / `ACK:S`, luego `CLOSED:E` / `CLOSED:S` | Abrir la talanquera de entrada / salida |
+| `P` | `PONG` | Comprobar comunicación |
+| `T<seg>` (1 a 60) | `OK:T=<s>` o `ERR:T` | Cambiar el tiempo de apertura |
+| — | `READY` | El Arduino terminó de iniciar |
 
 ##### Ejecución automática con `deploy.sh`
 
@@ -212,7 +287,7 @@ Si prefieres ejecutar el worker de forma directa en tu terminal sin usar `deploy
 
 ## Configuración del Sistema (.env)
 
-Todos los valores de configuración del proyecto se gestionan mediante el archivo `.env` en la raíz del proyecto, tomando como referencia [.env.example](file:///home/srvenient/eternal-dev/fullstack/SIGAP/.env.example).
+Todos los valores de configuración del proyecto se gestionan mediante el archivo `.env` en la raíz del proyecto, tomando como referencia [.env.example](.env.example).
 
 ### 1. Configuración General del Entorno
 | Variable | Descripción | Valor por Defecto / Opciones |
@@ -235,11 +310,19 @@ Todos los valores de configuración del proyecto se gestionan mediante el archiv
 | `FRONTEND_URL` | URL base del frontend para permitir solicitudes CORS y redirecciones. | `http://localhost:3000` |
 | `FIRST_SUPERUSER` | Nombre de usuario inicial para la cuenta del primer superadministrador. | `admin` |
 | `FIRST_SUPERUSER_PASSWORD` | Contraseña asignada a la cuenta del primer superadministrador. | `admin123` |
-| `DEVICE_API_KEY` | Clave con la que el worker se autentica ante la API. **Obligatoria**, mínimo 16 caracteres. | *(sin valor por defecto)* |
 | `PAYMENT_GATEWAY` | Pasarela de pago. Solo existe la simulada, que no cobra dinero real. | `simulated` |
 | `PAYMENT_TIMEOUT_SECONDS` | Segundos que espera la confirmación de un pago. | `180` |
 
-### 4. Configuración de la Base de Datos (PostgreSQL)
+### 4. Worker de cámaras y talanqueras
+| Variable | Descripción | Valor por Defecto / Opciones |
+| :--- | :--- | :--- |
+| `DEVICE_API_KEY` | Clave con la que el worker se autentica ante la API (encabezado `X-Device-Key`). **Obligatoria**, mínimo 16 caracteres. Se genera con `python -c "import secrets; print(secrets.token_urlsafe(32))"`. | *(sin valor por defecto)* |
+| `ARDUINO_PORT` | Puerto serial del Arduino. | `COM3` (en Linux, por ejemplo `/dev/ttyACM0`) |
+| `ARDUINO_BAUD` | Velocidad del puerto serial. | `9600` |
+| `CAM_ENTRY_INDEX` | Índice de la cámara del carril de ingreso. | `1` |
+| `CAM_EXIT_INDEX` | Índice de la cámara del carril de salida. | `2` |
+
+### 5. Configuración de la Base de Datos (PostgreSQL)
 | Variable | Descripción | Valor por Defecto / Opciones |
 | :--- | :--- | :--- |
 | `POSTGRES_USER` | Nombre de usuario para la conexión a PostgreSQL. | `postgres` |
@@ -302,3 +385,20 @@ docker compose -f compose.dev.yml --profile test up -d db_test
 cd backend
 uv run --no-sync pytest
 ```
+
+| Archivo | Qué cubre |
+| :--- | :--- |
+| `test_charge.py` | Cálculo del cobro, regla de 12 horas y minutos de permanencia |
+| `test_operations.py` | Ingreso, pago, salida, alertas, tickets, dispositivos y permisos por rol |
+| `test_worker.py` | Flujo de cada carril y comunicación con el Arduino |
+| `test_app.py` | Health check y esquema OpenAPI |
+
+---
+
+## Limitaciones conocidas
+
+- **No hay tiempo máximo para salir después de pagar:** el valor queda congelado al pagar, así que no se cobra el tiempo que el vehículo siga dentro.
+- **La pasarela es simulada:** no recauda dinero real. Para una pasarela real se agrega su adaptador en `backend/src/server/payment/infrastructure/` y el resultado debe llegar por webhook firmado.
+- **No hay pago en efectivo ni cobro asistido por el Operador.**
+- **No hay sensor de paso:** la talanquera cierra por tiempo.
+- **No hay enlace ni QR desde el carril de salida hacia `/pago`:** hay que definir si será un kiosco o un QR impreso.
