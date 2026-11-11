@@ -1,3 +1,7 @@
+
+import faulthandler
+faulthandler.enable()   # pon esto al inicio del archivo
+
 import base64
 import os
 import sys
@@ -385,6 +389,8 @@ if __name__ == "__main__":
         process_streams(object_detection, ocr_reader)
     except KeyboardInterrupt:
         logger.info("Interrupción manual detectada.")
+    except Exception:
+        logger.exception("El worker murió por una excepción")
+        raise
     finally:
         gates.close()
-        sys.exit(0)

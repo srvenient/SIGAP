@@ -18,6 +18,7 @@ dependencies = [
     "requests>=2.34.2",
     "pyserial>=3.5",
     "alembic>=1.16",
+    "opencv-python<5.0.0.93",
 ]
 
 [dependency-groups]
