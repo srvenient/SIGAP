@@ -84,7 +84,7 @@ En el equipo del parqueadero, con el Arduino conectado:
 
 ```bash
 cd backend
-uv sync
+uv sync --extra cu130   # con GPU NVIDIA; sin GPU: uv sync --extra cpu
 ```
 
 ```bash
